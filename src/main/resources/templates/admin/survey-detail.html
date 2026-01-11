@@ -1,48 +1,66 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
+
 <head>
-  <meta charset="UTF-8">
-  <title>アンケート詳細</title>
+	<meta charset="UTF-8">
+	<title>アンケート詳細</title>
 </head>
+
 <body>
 
-<h1>アンケート詳細</h1>
+	<h1>アンケート詳細</h1>
 
-<div>
-  <p>ID: <span th:text="${survey.surveyId}"></span></p>
-  <p>タイトル: <span th:text="${survey.title}"></span></p>
-  <p>ステータス: <span th:text="${survey.status}"></span></p>
-  <p>公開開始: <span th:text="${survey.openAt}"></span></p>
-  <p>公開終了: <span th:text="${survey.closeAt}"></span></p>
-</div>
+	<div>
+		<p>ID: <span th:text="${survey.surveyId}"></span></p>
+		<p>タイトル: <span th:text="${survey.title}"></span></p>
+		<p>ステータス: <span th:text="${survey.status}"></span></p>
+		<p>公開開始: <span th:text="${survey.openAt}"></span></p>
+		<p>公開終了: <span th:text="${survey.closeAt}"></span></p>
+	</div>
 
-<h2>設問一覧</h2>
+	<h2>設問一覧</h2>
 
-<table border="1" cellpadding="6">
-  <thead>
-  <tr>
-    <th>順序</th>
-    <th>設問文</th>
-    <th>タイプ</th>
-    <th>用途</th>
-    <th>逆転</th>
-    <th>必須</th>
-  </tr>
-  </thead>
+	<table border="1" cellpadding="6">
+		<thead>
+			<tr>
+				<th>順序</th>
+				<th>設問文</th>
+				<th>タイプ</th>
+				<th>用途</th>
+				<th>逆転</th>
+				<th>必須</th>
+			</tr>
+		</thead>
 
-  <tbody>
-  <tr th:each="q : ${questions}">
-    <td th:text="${q.displayOrder}"></td>
-    <td th:text="${q.questionText}"></td>
-    <td th:text="${q.questionType}"></td>
-    <td th:text="${q.questionRole}"></td>
-    <td th:text="${q.isReverse == 1 ? 'Yes' : 'No'}"></td>
-    <td th:text="${q.isRequired == 1 ? 'Yes' : 'No'}"></td>
-  </tr>
-  </tbody>
-</table>
+		<tbody>
+			<tr th:each="q : ${questions}">
+				<td th:text="${q.displayOrder}"></td>
+				<td th:text="${q.questionText}"></td>
+				<td th:text="${q.questionType}"></td>
+				<td th:text="${q.questionRole}"></td>
+				<td th:text="${q.isReverse == 1 ? 'Yes' : 'No'}"></td>
+				<td th:text="${q.isRequired == 1 ? 'Yes' : 'No'}"></td>
+				<!-- 選択肢表示 -->
+				<td>
+					<!-- TEXT（記述式）なら選択肢なし -->
+					<div th:if="${q.questionType == 'TEXT'}">（記述式）</div>
 
-<p><a href="/admin/surveys">一覧へ戻る</a></p>
+					<!-- 選択式の場合 -->
+					<ul th:if="${q.questionType != 'TEXT'}">
+						<!-- optionMap[questionId] が null の可能性があるので安全に分岐 -->
+						<li th:if="${optionMap[q.questionId]} == null">（選択肢なし）</li>
+
+						<li th:each="o : ${optionMap[q.questionId]}"
+							th:text="${o.displayOrder + '. ' + o.optionText + ' (score=' + o.score + ')'}">
+						</li>
+					</ul>
+				</td>
+			</tr>
+		</tbody>
+	</table>
+
+	<p><a href="/admin/surveys">一覧へ戻る</a></p>
 
 </body>
+
 </html>

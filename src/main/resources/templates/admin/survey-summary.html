@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>集計</title>
+</head>
+<body>
+
+<h1>集計</h1>
+
+<div>
+  <p>ID: <span th:text="${survey.surveyId}"></span></p>
+  <p>タイトル: <span th:text="${survey.title}"></span></p>
+</div>
+
+<hr>
+
+<h2>設問ごとの回答数</h2>
+<table border="1" cellpadding="6">
+  <tr>
+    <th>順序</th>
+    <th>設問</th>
+    <th>回答数</th>
+  </tr>
+  <tr th:each="q : ${questionCounts}">
+    <td th:text="${q.displayOrder}"></td>
+    <td th:text="${q.questionText}"></td>
+    <td th:text="${q.answerCount}"></td>
+  </tr>
+</table>
+
+<hr>
+
+<h2>選択肢ごとの人数</h2>
+
+<div th:each="entry : ${optionCountMap}">
+  <h3 th:text="${entry.value[0].questionOrder + '. ' + entry.value[0].questionText}"></h3>
+
+  <table border="1" cellpadding="6">
+    <tr>
+      <th>選択肢</th>
+      <th>人数</th>
+    </tr>
+    <tr th:each="r : ${entry.value}">
+      <td th:text="${r.optionOrder + '. ' + r.optionText}"></td>
+      <td th:text="${r.selectedCount}"></td>
+    </tr>
+  </table>
+</div>
+
+<hr>
+
+<h2>平均スコア（SINGLE）</h2>
+<table border="1" cellpadding="6">
+  <tr>
+    <th>順序</th>
+    <th>設問</th>
+    <th>平均</th>
+  </tr>
+  <tr th:each="a : ${avgScores}">
+    <td th:text="${a.displayOrder}"></td>
+    <td th:text="${a.questionText}"></td>
+    <td th:text="${#numbers.formatDecimal(a.avgScore, 1, 2)}"></td>
+  </tr>
+</table>
+
+<p>
+  <a th:href="@{'/admin/surveys/' + ${survey.surveyId}}">詳細へ戻る</a>
+</p>
+
+</body>
+</html>
