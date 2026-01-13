@@ -73,7 +73,9 @@
 			</tr>
 
 			<tr th:each="r : ${responses}">
-				<td th:text="${r.responseId}">307</td>
+				<td>
+					<a th:href="@{|/admin/responses/${r.responseId}|}" th:text="${r.responseId}">307</a>
+				</td>
 				<td th:text="${r.surveyTitle}">ストレス簡易チェック</td>
 				<td th:text="${r.status}">COMPLETED</td>
 				<td th:text="${r.answerCount}">6</td>
