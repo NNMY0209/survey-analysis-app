@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+	<meta charset="UTF-8">
+	<title>回答CSVインポート</title>
+</head>
+
+<body>
+
+	<h1>回答CSVインポート</h1>
+
+	<p>
+		対象アンケート：
+		<strong th:text="${survey.title}">アンケート名</strong>
+	</p>
+
+	<form th:action="@{|/admin/surveys/${survey.surveyId}/responses/import|}" method="post"
+		enctype="multipart/form-data">
+
+		<div>
+			<input type="file" name="file" accept=".csv" required>
+		</div>
+
+		<div style="margin-top: 1em;">
+			<button type="submit">CSVを取り込む</button>
+		</div>
+	</form>
+
+	<p th:if="${error}" style="color:red;" th:text="${error}"></p>
+
+	<hr>
+
+	<h3>CSVフォーマット</h3>
+	<pre>
+respondent_key,Q1,Q2,Q3
+r-101,7,"1,3",2
+r-102,10,2,1
+</pre>
+
+	<p>
+		※ Q列は設問番号（question_id）<br>
+		※ 空欄は未回答として扱われます
+	</p>
+
+	<p>
+		<a th:href="@{|/admin/surveys/${survey.surveyId}|}">
+			← アンケート詳細へ戻る
+		</a>
+	</p>
+
+</body>
+
+</html>
