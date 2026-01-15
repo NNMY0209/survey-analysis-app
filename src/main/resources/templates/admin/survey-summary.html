@@ -1,72 +1,151 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
+
 <head>
-  <meta charset="UTF-8">
-  <title>集計</title>
+	<meta charset="UTF-8">
+	<title>集計</title>
+	<link rel="stylesheet" th:href="@{/css/common.css}">
 </head>
+
 <body>
 
-<h1>集計</h1>
+	<div th:replace="fragments/admin-header :: header"></div>
 
-<div>
-  <p>ID: <span th:text="${survey.surveyId}"></span></p>
-  <p>タイトル: <span th:text="${survey.title}"></span></p>
-</div>
+	<div class="container">
+		<h1 class="page-title">集計結果</h1>
 
-<hr>
+		<div class="card">
+			<div class="muted" style="margin-bottom: 6px;">アンケート名：</div>
+			<div style="font-weight:800; font-size:18px;">
+				<span th:text="${survey.title}">アンケート①</span>
+			</div>
+			<div class="muted" style="margin-top: 6px;">ID: <span th:text="${survey.surveyId}">1</span></div>
+		</div>
 
-<h2>設問ごとの回答数</h2>
-<table border="1" cellpadding="6">
-  <tr>
-    <th>順序</th>
-    <th>設問</th>
-    <th>回答数</th>
-  </tr>
-  <tr th:each="q : ${questionCounts}">
-    <td th:text="${q.displayOrder}"></td>
-    <td th:text="${q.questionText}"></td>
-    <td th:text="${q.answerCount}"></td>
-  </tr>
-</table>
+		<div class="card tabs">
 
-<hr>
+			<!-- Tab radios -->
+			<input type="radio" name="tab" id="tab-basic" checked>
+			<input type="radio" name="tab" id="tab-scales">
+			<input type="radio" name="tab" id="tab-graph">
 
-<h2>選択肢ごとの人数</h2>
+			<!-- Tab labels -->
+			<div class="tab-labels">
+				<label class="tab-label" for="tab-basic">基本分析</label>
+				<label class="tab-label" for="tab-scales">下位尺度分析</label>
+				<label class="tab-label" for="tab-graph">グラフ</label>
+			</div>
 
-<div th:each="entry : ${optionCountMap}">
-  <h3 th:text="${entry.value[0].questionOrder + '. ' + entry.value[0].questionText}"></h3>
+			<!-- Panels -->
+			<div class="tab-panels">
 
-  <table border="1" cellpadding="6">
-    <tr>
-      <th>選択肢</th>
-      <th>人数</th>
-    </tr>
-    <tr th:each="r : ${entry.value}">
-      <td th:text="${r.optionOrder + '. ' + r.optionText}"></td>
-      <td th:text="${r.selectedCount}"></td>
-    </tr>
-  </table>
-</div>
+				<!-- 基本分析 -->
+				<section class="tab-panel" id="panel-basic">
 
-<hr>
+					<h2 class="section-title">設問ごとの回答数</h2>
+					<div class="scroll-box" style="max-height: 260px;">
+						<table class="table">
+							<thead>
+								<tr>
+									<th class="nowrap">順序</th>
+									<th>設問</th>
+									<th class="nowrap">回答数</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr th:each="q : ${questionCounts}">
+									<td class="nowrap" th:text="${q.displayOrder}"></td>
+									<td th:text="${q.questionText}"></td>
+									<td class="nowrap" th:text="${q.answerCount}"></td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
 
-<h2>平均スコア（SINGLE）</h2>
-<table border="1" cellpadding="6">
-  <tr>
-    <th>順序</th>
-    <th>設問</th>
-    <th>平均</th>
-  </tr>
-  <tr th:each="a : ${avgScores}">
-    <td th:text="${a.displayOrder}"></td>
-    <td th:text="${a.questionText}"></td>
-    <td th:text="${#numbers.formatDecimal(a.avgScore, 1, 2)}"></td>
-  </tr>
-</table>
+					<div style="height: 14px;"></div>
 
-<p>
-  <a th:href="@{'/admin/surveys/' + ${survey.surveyId}}">詳細へ戻る</a>
-</p>
+					<h2 class="section-title">選択肢ごとの人数</h2>
 
+					<div class="scroll-box" style="max-height: 520px;">
+						<div th:each="entry : ${optionCountMap}" style="margin-bottom: 10px;">
+							<details class="summary">
+								<summary>
+								  <div class="summary-line">
+								    <span class="summary-qno" th:text="${entry.value[0].questionOrder + '.'}">1.</span>
+								    <span class="summary-text" th:text="${entry.value[0].questionText}">...</span>
+								  </div>
+								</summary>
+
+								<div class="scroll-box" style="max-height: 220px; margin-top: 8px;">
+									<table class="table">
+										<thead>
+											<tr>
+												<th>選択肢</th>
+												<th class="nowrap">人数</th>
+											</tr>
+										</thead>
+										<tbody>
+											<tr th:each="r : ${entry.value}">
+												<td th:text="${r.optionOrder + '. ' + r.optionText}"></td>
+												<td class="nowrap" th:text="${r.selectedCount}"></td>
+											</tr>
+										</tbody>
+									</table>
+								</div>
+							</details>
+						</div>
+					</div>
+
+
+					<div style="height: 14px;"></div>
+
+					<h2 class="section-title">平均スコア（SINGLE）</h2>
+					<div class="scroll-box" style="max-height: 260px;">
+						<table class="table">
+							<thead>
+								<tr>
+									<th class="nowrap">順序</th>
+									<th>設問</th>
+									<th class="nowrap">平均</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr th:each="a : ${avgScores}">
+									<td class="nowrap" th:text="${a.displayOrder}"></td>
+									<td th:text="${a.questionText}"></td>
+									<td class="nowrap" th:text="${#numbers.formatDecimal(a.avgScore, 1, 2)}"></td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+
+				</section>
+
+				<!-- 下位尺度分析（いまはプレースホルダ） -->
+				<section class="tab-panel" id="panel-scales">
+					<p class="muted">※ここに下位尺度（scale）ごとの平均・標準偏差・中央値・N を表示します（次のステップ）。</p>
+
+					<!-- ここに後でテーブルを追加 -->
+					<!--
+          <table class="table">
+            ...
+          </table>
+          -->
+				</section>
+
+				<!-- グラフ（いまはプレースホルダ） -->
+				<section class="tab-panel" id="panel-graph">
+					<p class="muted">※ここに下位尺度別の棒グラフを表示します（次のステップ）。</p>
+				</section>
+
+			</div>
+		</div>
+
+		<div style="margin-top: 14px;">
+			<a th:href="@{'/admin/surveys/' + ${survey.surveyId}}">アンケート詳細に戻る</a>
+		</div>
+
+	</div>
 </body>
+
 </html>
