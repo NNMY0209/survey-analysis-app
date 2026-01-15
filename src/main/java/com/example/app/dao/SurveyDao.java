@@ -133,18 +133,25 @@ public class SurveyDao {
 		return optionMap;
 	}
 
-	// ==== 設問ごとの回答数 ====
+	// ==== 設問ごとの回答数（COMPLETEDのみ）====
 	public List<QuestionCountDto> findQuestionCountsBySurveyId(long surveyId) {
 		String sql = """
 				SELECT
 				  q.question_id,
 				  q.display_order,
 				  q.question_text,
-				  COUNT(a.answer_id) AS answer_count
+				  COUNT(DISTINCT rs.response_id) AS answer_count
 				FROM questions q
+				LEFT JOIN respondents r
+				  ON r.survey_id = q.survey_id
+				LEFT JOIN response_sessions rs
+				  ON rs.respondent_id = r.respondent_id
+				 AND rs.status = 'COMPLETED'
 				LEFT JOIN question_answers a
-				  ON a.question_id = q.question_id
+				  ON a.response_id = rs.response_id
+				 AND a.question_id = q.question_id
 				WHERE q.survey_id = ?
+				  AND a.answer_id IS NOT NULL
 				GROUP BY q.question_id, q.display_order, q.question_text
 				ORDER BY q.display_order, q.question_id
 				""";
@@ -159,10 +166,11 @@ public class SurveyDao {
 		}, surveyId);
 	}
 
-	// ==== 選択肢ごとの選択数 ====
+	// ==== 選択肢ごとの選択数（MULTI対応・COMPLETEDのみ）====
 	public List<OptionCountRowDto> findOptionCountsBySurveyId(long surveyId) {
+
 		String sql = """
-								SELECT
+				SELECT
 				  q.question_id,
 				  q.display_order AS question_order,
 				  q.question_text,
@@ -175,16 +183,30 @@ public class SurveyDao {
 				  ON o.question_id = q.question_id
 				LEFT JOIN (
 				  -- SINGLE: question_answers.option_id
-				  SELECT qa.question_id, qa.option_id AS selected_option_id
-				  FROM question_answers qa
-				  WHERE qa.option_id IS NOT NULL
+				  SELECT
+				    qa.question_id,
+				    qa.option_id AS selected_option_id
+				  FROM response_sessions rs
+				  JOIN respondents r ON r.respondent_id = rs.respondent_id
+				  JOIN question_answers qa ON qa.response_id = rs.response_id
+				  JOIN questions q2 ON q2.question_id = qa.question_id
+				  WHERE r.survey_id = ?
+				    AND rs.status = 'COMPLETED'
+				    AND qa.option_id IS NOT NULL
 
 				  UNION ALL
 
 				  -- MULTI: question_answer_multi.option_id
-				  SELECT qa.question_id, qam.option_id AS selected_option_id
-				  FROM question_answers qa
+				  SELECT
+				    qa.question_id,
+				    qam.option_id AS selected_option_id
+				  FROM response_sessions rs
+				  JOIN respondents r ON r.respondent_id = rs.respondent_id
+				  JOIN question_answers qa ON qa.response_id = rs.response_id
 				  JOIN question_answer_multi qam ON qam.answer_id = qa.answer_id
+				  JOIN questions q2 ON q2.question_id = qa.question_id
+				  WHERE r.survey_id = ?
+				    AND rs.status = 'COMPLETED'
 				) x
 				  ON x.question_id = q.question_id
 				 AND x.selected_option_id = o.option_id
@@ -193,9 +215,8 @@ public class SurveyDao {
 				  q.question_id, q.display_order, q.question_text,
 				  o.option_id, o.display_order, o.option_text
 				ORDER BY
-				  q.display_order, o.display_order;
-
-								""";
+				  q.display_order, o.display_order
+				""";
 
 		return jdbcTemplate.query(sql, (rs, rowNum) -> {
 			OptionCountRowDto dto = new OptionCountRowDto();
@@ -207,10 +228,10 @@ public class SurveyDao {
 			dto.setOptionText(rs.getString("option_text"));
 			dto.setSelectedCount(rs.getLong("selected_count"));
 			return dto;
-		}, surveyId);
+		}, surveyId, surveyId, surveyId);
 	}
 
-	// ==== 設問ごとの平均スコア ====
+	// ==== 設問ごとの平均スコア（SINGLE・COMPLETEDのみ）====
 	public List<QuestionAvgDto> findAvgScoresBySurveyId(long surveyId) {
 		String sql = """
 				SELECT
@@ -219,8 +240,14 @@ public class SurveyDao {
 				  q.question_text,
 				  AVG(o.score) AS avg_score
 				FROM questions q
+				JOIN respondents r
+				  ON r.survey_id = q.survey_id
+				JOIN response_sessions rs
+				  ON rs.respondent_id = r.respondent_id
+				 AND rs.status = 'COMPLETED'
 				JOIN question_answers a
-				  ON a.question_id = q.question_id
+				  ON a.response_id = rs.response_id
+				 AND a.question_id = q.question_id
 				JOIN question_options o
 				  ON o.option_id = a.option_id
 				WHERE q.survey_id = ?
