@@ -1,0 +1,75 @@
+/* ===== Base ===== */
+:root{
+  --bg: #f5f6f8;
+  --card: #ffffff;
+  --text: #222;
+  --muted: #6b7280;
+  --border: #e5e7eb;
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+}
+
+*{ box-sizing: border-box; }
+body{
+  margin: 0;
+  font-family: "Segoe UI","Hiragino Kaku Gothic ProN","Meiryo",sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* ===== Layout ===== */
+.container{
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 16px;
+}
+
+.page-title{
+  margin: 0 0 16px;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.card{
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+}
+
+/* ===== Table ===== */
+.table{
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th, .table td{
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.table thead th{
+  font-size: 12px;
+  color: var(--muted);
+  letter-spacing: .02em;
+  background: #fafafa;
+  border-bottom: 1px solid var(--border);
+}
+
+.table tbody tr:hover{
+  background: #f9fafb;
+}
+
+.nowrap{ white-space: nowrap; }
+
+/* ===== Link ===== */
+a{
+  color: var(--primary);
+  text-decoration: none;
+}
+a:hover{ text-decoration: underline; }
+
+/* ===== Utility ===== */
+.muted{ color: var(--muted); }
