@@ -2,65 +2,87 @@
 <html xmlns:th="http://www.thymeleaf.org">
 
 <head>
-	<meta charset="UTF-8">
-	<title>アンケート詳細</title>
+  <meta charset="UTF-8">
+  <title>アンケート詳細</title>
+  <link rel="stylesheet" th:href="@{/css/common.css}">
 </head>
 
 <body>
 
-	<h1>アンケート詳細</h1>
+  <div th:replace="fragments/admin-header :: header"></div>
 
-	<div>
-		<p>ID: <span th:text="${survey.surveyId}"></span></p>
-		<p>タイトル: <span th:text="${survey.title}"></span></p>
-		<p>ステータス: <span th:text="${survey.status}"></span></p>
-		<p>公開開始: <span th:text="${survey.openAt}"></span></p>
-		<p>公開終了: <span th:text="${survey.closeAt}"></span></p>
-	</div>
+  <div class="container">
+    <h1 class="page-title">アンケート詳細</h1>
 
-	<h2>設問一覧</h2>
+    <div class="card" style="margin-bottom: 12px;">
+      <h2 class="section-title">【アンケート基本情報】</h2>
+      <dl class="kv">
+        <dt>アンケート名</dt>
+        <dd th:text="${survey.title}">アンケート①</dd>
 
-	<table border="1" cellpadding="6">
-		<thead>
-			<tr>
-				<th>順序</th>
-				<th>設問文</th>
-				<th>タイプ</th>
-				<th>用途</th>
-				<th>逆転</th>
-				<th>必須</th>
-			</tr>
-		</thead>
+        <dt>公開状況</dt>
+        <dd th:text="${survey.status}">公開</dd>
 
-		<tbody>
-			<tr th:each="q : ${questions}">
-				<td th:text="${q.displayOrder}"></td>
-				<td th:text="${q.questionText}"></td>
-				<td th:text="${q.questionType}"></td>
-				<td th:text="${q.questionRole}"></td>
-				<td th:text="${q.isReverse == 1 ? 'Yes' : 'No'}"></td>
-				<td th:text="${q.isRequired == 1 ? 'Yes' : 'No'}"></td>
-				<!-- 選択肢表示 -->
-				<td>
-					<!-- TEXT（記述式）なら選択肢なし -->
-					<div th:if="${q.questionType == 'TEXT'}">（記述式）</div>
+        <dt>締切日</dt>
+        <dd>
+          <span th:text="${survey.closeAt}">yyyy/MM/dd</span>
+        </dd>
 
-					<!-- 選択式の場合 -->
-					<ul th:if="${q.questionType != 'TEXT'}">
-						<!-- optionMap[questionId] が null の可能性があるので安全に分岐 -->
-						<li th:if="${optionMap[q.questionId]} == null">（選択肢なし）</li>
+        <dt class="muted">ID</dt>
+        <dd class="muted" th:text="${survey.surveyId}">1</dd>
+      </dl>
+    </div>
 
-						<li th:each="o : ${optionMap[q.questionId]}"
-							th:text="${o.displayOrder + '. ' + o.optionText + ' (score=' + o.score + ')'}">
-						</li>
-					</ul>
-				</td>
-			</tr>
-		</tbody>
-	</table>
+    <div class="card" style="margin-bottom: 12px;">
+      <h2 class="section-title">【回答状況】</h2>
+      <dl class="kv">
+        <dt>回答数</dt>
+        <dd><span th:text="${answerCount}">xxx</span>件</dd>
+      </dl>
+    </div>
 
-	<p><a href="/admin/surveys">一覧へ戻る</a></p>
+    <div class="actions">
+      <a th:href="@{|/admin/surveys/${survey.surveyId}/summary|}">集計結果を見る</a>
+      <a th:href="@{|/admin/surveys/${survey.surveyId}/responses|}">回答一覧を見る</a>
+      <a th:href="@{|/admin/surveys/${survey.surveyId}/responses/import|}">回答データを登録する</a>
+      <a th:href="@{/admin/surveys}">一覧に戻る</a>
+    </div>
 
+    <!-- 設問一覧（必要なときだけ） -->
+    <details class="summary">
+      <summary>設問一覧を表示</summary>
+      <div class="card" style="margin-top: 10px;">
+        <div class="scroll-box">
+          <table class="table">
+            <thead>
+              <tr>
+                <th class="nowrap">順序</th>
+                <th>設問文</th>
+                <th class="nowrap">タイプ</th>
+                <th class="nowrap">用途</th>
+                <th class="nowrap">逆転</th>
+                <th class="nowrap">必須</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr th:each="q : ${questions}">
+                <td class="nowrap" th:text="${q.displayOrder}"></td>
+                <td th:text="${q.questionText}"></td>
+                <td class="nowrap" th:text="${q.questionType}"></td>
+                <td class="nowrap" th:text="${q.questionRole}"></td>
+                <td class="nowrap" th:text="${q.isReverse == 1 ? 'Yes' : 'No'}"></td>
+                <td class="nowrap" th:text="${q.isRequired == 1 ? 'Yes' : 'No'}"></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- 選択肢の表示は「設問詳細」を作るか、ここでは省略が無難 -->
+        <p class="muted" style="margin: 10px 0 0;">※選択肢の詳細は今後「設問詳細」または別表示で拡張可能</p>
+      </div>
+    </details>
+
+  </div>
 </body>
 
 </html>
