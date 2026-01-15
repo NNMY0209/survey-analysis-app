@@ -139,8 +139,8 @@ public class AnswerImportService {
 
 				try {
 					// 3-1) respondents & response_sessions 作成
-					long respondentId = answerImportDao.createRespondent(surveyId, respondentKey);
-					long responseId = answerImportDao.createCompletedSession(surveyId, respondentId);
+					long respondentId = answerImportDao.upsertRespondent(surveyId, respondentKey);
+					long responseId = answerImportDao.createCompletedSession(respondentId);
 
 					// 3-2) 各設問の値を保存
 					for (Map.Entry<Integer, Long> entry : qColIndexToQuestionId.entrySet()) {
@@ -166,7 +166,7 @@ public class AnswerImportService {
 							if (optionId == null) {
 								throw new IllegalArgumentException("Q" + questionId + " の選択肢が不正: " + raw);
 							}
-							answerImportDao.insertSingle(responseId, questionId, optionId);
+							answerImportDao.upsertSingle(responseId, questionId, optionId);
 
 						} else if ("MULTI".equalsIgnoreCase(qType)) {
 							List<Integer> orders = parseMultiOrders(raw); // "1,3"
@@ -178,11 +178,11 @@ public class AnswerImportService {
 								}
 								optionIds.add(optionId);
 							}
-							answerImportDao.insertMulti(responseId, questionId, optionIds);
+							answerImportDao.upsertMulti(responseId, questionId, optionIds);
 
 						} else if ("TEXT".equalsIgnoreCase(qType) || "NUMBER".equalsIgnoreCase(qType)) {
 							// NUMBERもTEXT同様に answer_text へ保存
-							answerImportDao.insertText(responseId, questionId, raw);
+							answerImportDao.upsertText(responseId, questionId, raw);
 
 						} else {
 							// 未知のタイプ

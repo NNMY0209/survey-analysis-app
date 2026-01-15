@@ -27,8 +27,7 @@ public class SurveyAnswerService {
 	public SurveyAnswerService(
 			SurveyDao surveyDao,
 			ResponseSessionDao responseSessionDao,
-			QuestionAnswerDao questionAnswerDao
-	) {
+			QuestionAnswerDao questionAnswerDao) {
 		this.surveyDao = surveyDao;
 		this.responseSessionDao = responseSessionDao;
 		this.questionAnswerDao = questionAnswerDao;
@@ -37,7 +36,7 @@ public class SurveyAnswerService {
 	/** 回答画面用VM作成（respondent + response_session を作り、設問＋選択肢を組み立てる） */
 	public AnswerViewModel buildAnswerView(long surveyId) {
 		long respondentId = responseSessionDao.createRespondent(surveyId);
-		long responseId = responseSessionDao.createResponseSession(surveyId, respondentId);
+		long responseId = responseSessionDao.createResponseSession(respondentId);
 
 		List<QuestionDto> questions = surveyDao.findQuestionsBySurveyId(surveyId);
 		Map<Long, List<OptionDto>> optionMap = surveyDao.findOptionsBySurveyId(surveyId);
@@ -71,26 +70,30 @@ public class SurveyAnswerService {
 
 		if (req.getAnswers() != null) {
 			for (AnswerItemDto a : req.getAnswers()) {
-				if (a == null) continue;
+				if (a == null)
+					continue;
 
 				String type = a.getQuestionType();
 				if ("SINGLE".equals(type)) {
-					if (a.getOptionId() == null) continue;
+					if (a.getOptionId() == null)
+						continue;
 					questionAnswerDao.insertSingle(req.getResponseId(), a.getQuestionId(), a.getOptionId());
 
 				} else if ("MULTI".equals(type)) {
-					if (a.getOptionIds() == null || a.getOptionIds().isEmpty()) continue;
+					if (a.getOptionIds() == null || a.getOptionIds().isEmpty())
+						continue;
 					questionAnswerDao.insertMulti(req.getResponseId(), a.getQuestionId(), a.getOptionIds());
 
-				} else if ("TEXT".equals(type)) {
+				} else if ("TEXT".equals(type) || "NUMBER".equals(type)) {
 					String text = a.getAnswerText();
-					if (text == null) text = "";
+					if (text == null)
+						text = "";
 					questionAnswerDao.insertText(req.getResponseId(), a.getQuestionId(), text);
 				}
+
 			}
 		}
 
 		responseSessionDao.markCompleted(req.getResponseId());
 	}
 }
-
