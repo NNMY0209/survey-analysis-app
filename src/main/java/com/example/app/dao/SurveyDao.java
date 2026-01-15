@@ -8,6 +8,7 @@ import java.util.Map;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+import com.example.app.dto.AdminSurveyRowDto;
 import com.example.app.dto.OptionCountRowDto;
 import com.example.app.dto.OptionDto;
 import com.example.app.dto.QuestionAvgDto;
@@ -131,98 +132,145 @@ public class SurveyDao {
 
 		return optionMap;
 	}
-	
+
 	// ==== 設問ごとの回答数 ====
 	public List<QuestionCountDto> findQuestionCountsBySurveyId(long surveyId) {
-	    String sql = """
-	            SELECT
-	              q.question_id,
-	              q.display_order,
-	              q.question_text,
-	              COUNT(a.answer_id) AS answer_count
-	            FROM questions q
-	            LEFT JOIN question_answers a
-	              ON a.question_id = q.question_id
-	            WHERE q.survey_id = ?
-	            GROUP BY q.question_id, q.display_order, q.question_text
-	            ORDER BY q.display_order, q.question_id
-	            """;
+		String sql = """
+				SELECT
+				  q.question_id,
+				  q.display_order,
+				  q.question_text,
+				  COUNT(a.answer_id) AS answer_count
+				FROM questions q
+				LEFT JOIN question_answers a
+				  ON a.question_id = q.question_id
+				WHERE q.survey_id = ?
+				GROUP BY q.question_id, q.display_order, q.question_text
+				ORDER BY q.display_order, q.question_id
+				""";
 
-	    return jdbcTemplate.query(sql, (rs, rowNum) -> {
-	        QuestionCountDto dto = new QuestionCountDto();
-	        dto.setQuestionId(rs.getLong("question_id"));
-	        dto.setDisplayOrder(rs.getInt("display_order"));
-	        dto.setQuestionText(rs.getString("question_text"));
-	        dto.setAnswerCount(rs.getLong("answer_count"));
-	        return dto;
-	    }, surveyId);
+		return jdbcTemplate.query(sql, (rs, rowNum) -> {
+			QuestionCountDto dto = new QuestionCountDto();
+			dto.setQuestionId(rs.getLong("question_id"));
+			dto.setDisplayOrder(rs.getInt("display_order"));
+			dto.setQuestionText(rs.getString("question_text"));
+			dto.setAnswerCount(rs.getLong("answer_count"));
+			return dto;
+		}, surveyId);
 	}
 
 	// ==== 選択肢ごとの選択数 ====
 	public List<OptionCountRowDto> findOptionCountsBySurveyId(long surveyId) {
-	    String sql = """
-	            SELECT
-	              q.question_id,
-	              q.display_order AS question_order,
-	              q.question_text,
-	              o.option_id,
-	              o.display_order AS option_order,
-	              o.option_text,
-	              COUNT(a.answer_id) AS selected_count
-	            FROM questions q
-	            JOIN question_options o
-	              ON o.question_id = q.question_id
-	            LEFT JOIN question_answers a
-	              ON a.option_id = o.option_id
-	            WHERE q.survey_id = ?
-	            GROUP BY
-	              q.question_id, q.display_order, q.question_text,
-	              o.option_id, o.display_order, o.option_text
-	            ORDER BY
-	              q.display_order, o.display_order
-	            """;
+		String sql = """
+								SELECT
+				  q.question_id,
+				  q.display_order AS question_order,
+				  q.question_text,
+				  o.option_id,
+				  o.display_order AS option_order,
+				  o.option_text,
+				  COUNT(x.selected_option_id) AS selected_count
+				FROM questions q
+				JOIN question_options o
+				  ON o.question_id = q.question_id
+				LEFT JOIN (
+				  -- SINGLE: question_answers.option_id
+				  SELECT qa.question_id, qa.option_id AS selected_option_id
+				  FROM question_answers qa
+				  WHERE qa.option_id IS NOT NULL
 
-	    return jdbcTemplate.query(sql, (rs, rowNum) -> {
-	        OptionCountRowDto dto = new OptionCountRowDto();
-	        dto.setQuestionId(rs.getLong("question_id"));
-	        dto.setQuestionOrder(rs.getInt("question_order"));
-	        dto.setQuestionText(rs.getString("question_text"));
-	        dto.setOptionId(rs.getLong("option_id"));
-	        dto.setOptionOrder(rs.getInt("option_order"));
-	        dto.setOptionText(rs.getString("option_text"));
-	        dto.setSelectedCount(rs.getLong("selected_count"));
-	        return dto;
-	    }, surveyId);
+				  UNION ALL
+
+				  -- MULTI: question_answer_multi.option_id
+				  SELECT qa.question_id, qam.option_id AS selected_option_id
+				  FROM question_answers qa
+				  JOIN question_answer_multi qam ON qam.answer_id = qa.answer_id
+				) x
+				  ON x.question_id = q.question_id
+				 AND x.selected_option_id = o.option_id
+				WHERE q.survey_id = ?
+				GROUP BY
+				  q.question_id, q.display_order, q.question_text,
+				  o.option_id, o.display_order, o.option_text
+				ORDER BY
+				  q.display_order, o.display_order;
+
+								""";
+
+		return jdbcTemplate.query(sql, (rs, rowNum) -> {
+			OptionCountRowDto dto = new OptionCountRowDto();
+			dto.setQuestionId(rs.getLong("question_id"));
+			dto.setQuestionOrder(rs.getInt("question_order"));
+			dto.setQuestionText(rs.getString("question_text"));
+			dto.setOptionId(rs.getLong("option_id"));
+			dto.setOptionOrder(rs.getInt("option_order"));
+			dto.setOptionText(rs.getString("option_text"));
+			dto.setSelectedCount(rs.getLong("selected_count"));
+			return dto;
+		}, surveyId);
 	}
 
 	// ==== 設問ごとの平均スコア ====
 	public List<QuestionAvgDto> findAvgScoresBySurveyId(long surveyId) {
-	    String sql = """
-	            SELECT
-	              q.question_id,
-	              q.display_order,
-	              q.question_text,
-	              AVG(o.score) AS avg_score
-	            FROM questions q
-	            JOIN question_answers a
-	              ON a.question_id = q.question_id
-	            JOIN question_options o
-	              ON o.option_id = a.option_id
-	            WHERE q.survey_id = ?
-	              AND q.question_type = 'SINGLE'
-	              AND o.score IS NOT NULL
-	            GROUP BY q.question_id, q.display_order, q.question_text
-	            ORDER BY q.display_order
-	            """;
+		String sql = """
+				SELECT
+				  q.question_id,
+				  q.display_order,
+				  q.question_text,
+				  AVG(o.score) AS avg_score
+				FROM questions q
+				JOIN question_answers a
+				  ON a.question_id = q.question_id
+				JOIN question_options o
+				  ON o.option_id = a.option_id
+				WHERE q.survey_id = ?
+				  AND q.question_type = 'SINGLE'
+				  AND o.score IS NOT NULL
+				GROUP BY q.question_id, q.display_order, q.question_text
+				ORDER BY q.display_order
+				""";
 
-	    return jdbcTemplate.query(sql, (rs, rowNum) -> {
-	        QuestionAvgDto dto = new QuestionAvgDto();
-	        dto.setQuestionId(rs.getLong("question_id"));
-	        dto.setDisplayOrder(rs.getInt("display_order"));
-	        dto.setQuestionText(rs.getString("question_text"));
-	        dto.setAvgScore(rs.getDouble("avg_score"));
-	        return dto;
-	    }, surveyId);
+		return jdbcTemplate.query(sql, (rs, rowNum) -> {
+			QuestionAvgDto dto = new QuestionAvgDto();
+			dto.setQuestionId(rs.getLong("question_id"));
+			dto.setDisplayOrder(rs.getInt("display_order"));
+			dto.setQuestionText(rs.getString("question_text"));
+			dto.setAvgScore(rs.getDouble("avg_score"));
+			return dto;
+		}, surveyId);
+	}
+
+	// ===== アンケートの回答数取得 =====
+	public List<AdminSurveyRowDto> findAllWithAnswerCount() {
+		String sql = """
+				SELECT
+				  s.survey_id,
+				  s.title,
+				  s.status,
+				  s.open_at,
+				  s.close_at,
+				  COUNT(rs.response_id) AS answer_count
+				FROM surveys s
+				LEFT JOIN respondents r
+				  ON r.survey_id = s.survey_id
+				LEFT JOIN response_sessions rs
+				  ON rs.respondent_id = r.respondent_id
+				 AND rs.status = 'COMPLETED'
+				GROUP BY
+				  s.survey_id, s.title, s.status, s.open_at, s.close_at
+				ORDER BY s.survey_id DESC
+				""";
+
+		return jdbcTemplate.query(sql, (rs, rowNum) -> {
+			AdminSurveyRowDto dto = new AdminSurveyRowDto();
+			dto.setSurveyId(rs.getLong("survey_id"));
+			dto.setTitle(rs.getString("title"));
+			dto.setStatus(rs.getString("status"));
+			dto.setOpenAt(rs.getTimestamp("open_at"));
+			dto.setCloseAt(rs.getTimestamp("close_at"));
+			dto.setAnswerCount(rs.getInt("answer_count"));
+			return dto;
+		});
 	}
 
 }

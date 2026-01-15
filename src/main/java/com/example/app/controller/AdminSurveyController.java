@@ -17,33 +17,33 @@ import com.example.app.dto.SurveyDetailDto;
 @Controller
 public class AdminSurveyController {
 
-    private final SurveyDao surveyDao;
-    private final AdminResponseDao adminResponseDao;
+	private final SurveyDao surveyDao;
+	private final AdminResponseDao adminResponseDao;
 
-    public AdminSurveyController(SurveyDao surveyDao, AdminResponseDao adminResponseDao) {
-        this.surveyDao = surveyDao;
-        this.adminResponseDao = adminResponseDao;
-    }
+	public AdminSurveyController(SurveyDao surveyDao, AdminResponseDao adminResponseDao) {
+		this.surveyDao = surveyDao;
+		this.adminResponseDao = adminResponseDao;
+	}
 
-    @GetMapping("/admin/surveys")
-    public String surveys(Model model) {
-        model.addAttribute("surveys", surveyDao.findAll());
-        return "admin/surveys";
-    }
+	@GetMapping("/admin/surveys")
+	public String surveys(Model model) {
+		model.addAttribute("surveys", surveyDao.findAllWithAnswerCount());
+		return "admin/surveys";
+	}
 
-    @GetMapping("/admin/surveys/{surveyId}")
-    public String surveyDetail(@PathVariable long surveyId, Model model) {
-        SurveyDetailDto survey = surveyDao.findDetailById(surveyId);
-        List<QuestionDto> questions = surveyDao.findQuestionsBySurveyId(surveyId);
-        Map<Long, List<OptionDto>> optionMap = surveyDao.findOptionsBySurveyId(surveyId);
+	@GetMapping("/admin/surveys/{surveyId}")
+	public String surveyDetail(@PathVariable long surveyId, Model model) {
+		SurveyDetailDto survey = surveyDao.findDetailById(surveyId);
+		List<QuestionDto> questions = surveyDao.findQuestionsBySurveyId(surveyId);
+		Map<Long, List<OptionDto>> optionMap = surveyDao.findOptionsBySurveyId(surveyId);
 
-        // 追加：COMPLETEDのみ回答数
-        int answerCount = adminResponseDao.countResponsesBySurveyId(surveyId, true);
+		// 追加：COMPLETEDのみ回答数
+		int answerCount = adminResponseDao.countResponsesBySurveyId(surveyId, true);
 
-        model.addAttribute("survey", survey);
-        model.addAttribute("questions", questions);
-        model.addAttribute("optionMap", optionMap);
-        model.addAttribute("answerCount", answerCount);
-        return "admin/survey-detail";
-    }
+		model.addAttribute("survey", survey);
+		model.addAttribute("questions", questions);
+		model.addAttribute("optionMap", optionMap);
+		model.addAttribute("answerCount", answerCount);
+		return "admin/survey-detail";
+	}
 }

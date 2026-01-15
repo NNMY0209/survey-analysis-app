@@ -2,41 +2,46 @@
 <html xmlns:th="http://www.thymeleaf.org">
 
 <head>
-	<meta charset="UTF-8">
-	<title>アンケート一覧</title>
-	<link rel="stylesheet" th:href="@{/css/common.css}">
+  <meta charset="UTF-8">
+  <title>アンケート一覧</title>
+  <link rel="stylesheet" th:href="@{/css/common.css}">
 </head>
 
 <body>
 
-	<h1>アンケート一覧</h1>
+  <div th:replace="fragments/admin-header :: header"></div>
 
-	<table border="1" cellpadding="6">
-		<thead>
-			<tr>
-				<th>ID</th>
-				<th>タイトル</th>
-				<th>ステータス</th>
-				<th>公開開始</th>
-				<th>公開終了</th>
-			</tr>
-		</thead>
+  <div class="container">
+    <h1 class="page-title">アンケート一覧</h1>
 
-		<tbody>
-			<tr th:each="s : ${surveys}">
-				<td th:text="${s.surveyId}"></td>
-				<td>
-					<a th:href="@{'/admin/surveys/' + ${s.surveyId}}" th:text="${s.title}">
-					</a>
-				</td>
-				<td th:text="${s.status}"></td>
-				<td th:text="${s.openAt}"></td>
-				<td th:text="${s.closeAt}"></td>
-			</tr>
+    <div class="card">
+      <table class="table">
+        <thead>
+          <tr>
+            <th class="nowrap">ID</th>
+            <th>タイトル</th>
+            <th class="nowrap">ステータス</th>
+            <th class="nowrap">公開開始</th>
+            <th class="nowrap">公開終了</th>
+            <th class="nowrap">回答数</th>
+          </tr>
+        </thead>
 
-		</tbody>
-	</table>
+        <tbody>
+          <tr th:each="s : ${surveys}">
+            <td class="nowrap" th:text="${s.surveyId}"></td>
+            <td>
+              <a th:href="@{'/admin/surveys/' + ${s.surveyId}}" th:text="${s.title}"></a>
+            </td>
+            <td class="nowrap" th:text="${s.status}"></td>
+            <td class="nowrap" th:text="${s.openAt}"></td>
+            <td class="nowrap" th:text="${s.closeAt}"></td>
+            <td class="nowrap" th:text="${s.answerCount}">0</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
 
 </body>
-
 </html>
