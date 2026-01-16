@@ -41,6 +41,9 @@ public class AdminSurveySummaryController {
 		// C: 平均スコア（SINGLEのみ）
 		model.addAttribute("avgScores", surveyDao.findAvgScoresBySurveyId(surveyId));
 
+		// D: 下位尺度平均
+		model.addAttribute("scaleAvgs", surveyDao.findScaleAveragesBySurveyId(surveyId));
+
 		return "admin/survey-summary";
 	}
 }

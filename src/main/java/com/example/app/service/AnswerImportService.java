@@ -29,7 +29,7 @@ public class AnswerImportService {
 	private final ImportMetaDao importMetaDao;
 	private final AnswerImportDao answerImportDao;
 
-	// "Q1" → 1 みたいに取りたい
+	// "Q1" → 1 みたいに取りたい（CSVのQ番号 = questions.display_order）
 	private static final Pattern Q_COL = Pattern.compile("^Q(\\d+)$");
 
 	public AnswerImportService(ImportMetaDao importMetaDao, AnswerImportDao answerImportDao) {
@@ -40,6 +40,10 @@ public class AnswerImportService {
 	/**
 	 * CSVアップロード（surveyIdは遷移元で確定）
 	 * CSVヘッダ例: respondent_key,Q1,Q2,Q3
+	 *
+	 * 仕様：
+	 * - Q1/Q2... は question_id ではなく questions.display_order を意味する
+	 * - 値（セル）は選択肢の display_order（例：5件法なら 1〜5）
 	 */
 	@Transactional
 	public ImportResultDto importCsv(long surveyId, MultipartFile file) {
@@ -50,9 +54,10 @@ public class AnswerImportService {
 		List<ImportQuestionMetaDto> questions = importMetaDao.findQuestions(surveyId);
 		List<ImportOptionMetaDto> options = importMetaDao.findOptions(surveyId);
 
-		Map<Long, ImportQuestionMetaDto> questionById = new HashMap<>();
+		// display_order -> question meta
+		Map<Integer, ImportQuestionMetaDto> questionByOrder = new HashMap<>();
 		for (ImportQuestionMetaDto q : questions) {
-			questionById.put(q.getQuestionId(), q);
+			questionByOrder.put(q.getDisplayOrder(), q);
 		}
 
 		// question_id -> (display_order -> option_id)
@@ -81,6 +86,13 @@ public class AnswerImportService {
 				return result;
 			}
 
+			// BOM除去（UTF-8-SIG対策：Excel由来でも壊れない）
+			for (int i = 0; i < headers.size(); i++) {
+				if (headers.get(i) != null) {
+					headers.set(i, headers.get(i).replace("\uFEFF", "").trim());
+				}
+			}
+
 			int respondentKeyIdx = indexOfIgnoreCase(headers, "respondent_key");
 			if (respondentKeyIdx < 0) {
 				result.addError("必須列 respondent_key が見つかりません");
@@ -88,27 +100,29 @@ public class AnswerImportService {
 				return result;
 			}
 
-			// Q列（Q1,Q2,...）を question_id に変換して保持
-			// colIndex -> questionId
-			Map<Integer, Long> qColIndexToQuestionId = new LinkedHashMap<>();
+			// Q列（Q1,Q2,...）を display_order に変換して保持
+			// colIndex -> display_order
+			Map<Integer, Integer> qColIndexToOrder = new LinkedHashMap<>();
 			for (int i = 0; i < headers.size(); i++) {
-				String h = headers.get(i).trim();
-				Long qid = parseQuestionIdFromHeader(h);
-				if (qid != null) {
-					qColIndexToQuestionId.put(i, qid);
+				String h = headers.get(i);
+				if (h == null)
+					continue;
+				Integer order = parseOrderFromHeader(h);
+				if (order != null) {
+					qColIndexToOrder.put(i, order);
 				}
 			}
 
-			if (qColIndexToQuestionId.isEmpty()) {
+			if (qColIndexToOrder.isEmpty()) {
 				result.addError("Q列（Q1,Q2,...）が見つかりません");
 				result.setTotalRows(0);
 				return result;
 			}
 
-			// ヘッダにあるQ列が、surveyIdの設問として存在するかチェック
-			for (Long qid : qColIndexToQuestionId.values()) {
-				if (!questionById.containsKey(qid)) {
-					result.addError("このアンケートに存在しない設問がCSVヘッダにあります: Q" + qid);
+			// ヘッダにあるQ列が、surveyIdの設問（display_order）として存在するかチェック
+			for (Integer order : qColIndexToOrder.values()) {
+				if (!questionByOrder.containsKey(order)) {
+					result.addError("このアンケートに存在しない設問がCSVヘッダにあります: Q" + order);
 				}
 			}
 			if (!result.getErrors().isEmpty()) {
@@ -132,7 +146,11 @@ public class AnswerImportService {
 
 				// 列数不足は許容（足りない分は空扱い）
 				String respondentKey = getCol(cols, respondentKeyIdx);
-				if (respondentKey == null || respondentKey.isBlank()) {
+				if (respondentKey == null)
+					respondentKey = "";
+				respondentKey = respondentKey.replace("\uFEFF", "").trim();
+
+				if (respondentKey.isBlank()) {
 					// respondent_key 空なら自動採番
 					respondentKey = "imp-" + UUID.randomUUID();
 				}
@@ -142,18 +160,22 @@ public class AnswerImportService {
 					long respondentId = answerImportDao.upsertRespondent(surveyId, respondentKey);
 					long responseId = answerImportDao.createCompletedSession(respondentId);
 
-					// 3-2) 各設問の値を保存
-					for (Map.Entry<Integer, Long> entry : qColIndexToQuestionId.entrySet()) {
+					// 3-2) 各設問の値を保存（Q列番号=display_order）
+					for (Map.Entry<Integer, Integer> entry : qColIndexToOrder.entrySet()) {
 						int colIdx = entry.getKey();
-						long questionId = entry.getValue();
+						int qOrder = entry.getValue(); // Q1 -> 1
 
-						ImportQuestionMetaDto qmeta = questionById.get(questionId);
+						ImportQuestionMetaDto qmeta = questionByOrder.get(qOrder);
+						if (qmeta == null)
+							continue; // 念のため
+
+						long questionId = qmeta.getQuestionId();
 						String qType = qmeta.getQuestionType();
 
 						String raw = getCol(cols, colIdx);
 						if (raw == null)
 							raw = "";
-						raw = raw.trim();
+						raw = raw.replace("\uFEFF", "").trim();
 
 						if (raw.isBlank()) {
 							// 未回答は保存しない（空欄ありOK）
@@ -161,20 +183,20 @@ public class AnswerImportService {
 						}
 
 						if ("SINGLE".equalsIgnoreCase(qType)) {
-							int order = parseIntStrict(raw);
-							Long optionId = getOptionId(optionIdByQuestionAndOrder, questionId, order);
+							int optOrder = parseIntStrict(raw); // 選択肢のdisplay_order
+							Long optionId = getOptionId(optionIdByQuestionAndOrder, questionId, optOrder);
 							if (optionId == null) {
-								throw new IllegalArgumentException("Q" + questionId + " の選択肢が不正: " + raw);
+								throw new IllegalArgumentException("Q" + qOrder + " の選択肢が不正: " + raw);
 							}
 							answerImportDao.upsertSingle(responseId, questionId, optionId);
 
 						} else if ("MULTI".equalsIgnoreCase(qType)) {
-							List<Integer> orders = parseMultiOrders(raw); // "1,3"
+							List<Integer> optOrders = parseMultiOrders(raw); // "1,3"
 							List<Long> optionIds = new ArrayList<>();
-							for (int order : orders) {
-								Long optionId = getOptionId(optionIdByQuestionAndOrder, questionId, order);
+							for (int optOrder : optOrders) {
+								Long optionId = getOptionId(optionIdByQuestionAndOrder, questionId, optOrder);
 								if (optionId == null) {
-									throw new IllegalArgumentException("Q" + questionId + " の選択肢が不正: " + order);
+									throw new IllegalArgumentException("Q" + qOrder + " の選択肢が不正: " + optOrder);
 								}
 								optionIds.add(optionId);
 							}
@@ -187,15 +209,13 @@ public class AnswerImportService {
 						} else {
 							// 未知のタイプ
 							throw new IllegalArgumentException(
-									"未対応のquestion_type: " + qType + " (Q" + questionId + ")");
+									"未対応のquestion_type: " + qType + " (Q" + qOrder + ")");
 						}
 					}
 
 					result.setSuccessRows(result.getSuccessRows() + 1);
 
 				} catch (Exception e) {
-					// 1行単位でエラーを溜める（ロールバックはトランザクションの都合で注意）
-					// → 本格運用は「1行ごとにトランザクション」だけど、実習ではまず動作優先でOK
 					result.addError("行" + rowNo + " の取り込み失敗: " + e.getMessage());
 				}
 			}
@@ -213,9 +233,12 @@ public class AnswerImportService {
 
 	private static int indexOfIgnoreCase(List<String> headers, String target) {
 		for (int i = 0; i < headers.size(); i++) {
-			if (headers.get(i) != null && headers.get(i).trim().equalsIgnoreCase(target)) {
+			String h = headers.get(i);
+			if (h == null)
+				continue;
+			h = h.replace("\uFEFF", "").trim();
+			if (h.equalsIgnoreCase(target))
 				return i;
-			}
 		}
 		return -1;
 	}
@@ -228,11 +251,17 @@ public class AnswerImportService {
 		return cols.get(idx);
 	}
 
-	private static Long parseQuestionIdFromHeader(String header) {
-		Matcher m = Q_COL.matcher(header);
+	/**
+	 * CSVヘッダの "Q1" から 1 を返す（= questions.display_order）
+	 */
+	private static Integer parseOrderFromHeader(String header) {
+		if (header == null)
+			return null;
+		String h = header.replace("\uFEFF", "").trim();
+		Matcher m = Q_COL.matcher(h);
 		if (!m.matches())
 			return null;
-		return Long.parseLong(m.group(1));
+		return Integer.parseInt(m.group(1));
 	}
 
 	private static int parseIntStrict(String s) {

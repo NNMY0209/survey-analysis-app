@@ -5,6 +5,36 @@
 	<meta charset="UTF-8">
 	<title>集計</title>
 	<link rel="stylesheet" th:href="@{/css/common.css}">
+	
+	<style>
+	    .tbl {
+	      width: 100%;
+	      border-collapse: collapse;
+	      font-size: 14px;
+	    }
+
+	    .tbl th,
+	    .tbl td {
+	      padding: 6px 8px;
+	      border-bottom: 1px solid #333;
+	      text-align: right;
+	    }
+
+	    .tbl th {
+	      border-bottom: 2px solid #333;
+	      text-align: center;
+	    }
+
+	    .tbl td:first-child,
+	    .tbl td:nth-child(2) {
+	      text-align: left;
+	    }
+
+	    .tbl tbody tr:hover {
+	      background: #fafafa;
+	    }
+	  </style>
+	
 </head>
 
 <body>
@@ -70,10 +100,11 @@
 						<div th:each="entry : ${optionCountMap}" style="margin-bottom: 10px;">
 							<details class="summary">
 								<summary>
-								  <div class="summary-line">
-								    <span class="summary-qno" th:text="${entry.value[0].questionOrder + '.'}">1.</span>
-								    <span class="summary-text" th:text="${entry.value[0].questionText}">...</span>
-								  </div>
+									<div class="summary-line">
+										<span class="summary-qno"
+											th:text="${entry.value[0].questionOrder + '.'}">1.</span>
+										<span class="summary-text" th:text="${entry.value[0].questionText}">...</span>
+									</div>
 								</summary>
 
 								<div class="scroll-box" style="max-height: 220px; margin-top: 8px;">
@@ -123,14 +154,47 @@
 
 				<!-- 下位尺度分析（いまはプレースホルダ） -->
 				<section class="tab-panel" id="panel-scales">
-					<p class="muted">※ここに下位尺度（scale）ごとの平均・標準偏差・中央値・N を表示します（次のステップ）。</p>
 
-					<!-- ここに後でテーブルを追加 -->
-					<!--
-          <table class="table">
-            ...
-          </table>
-          -->
+
+					<h2>下位尺度（COMPLETEDのみ）</h2>
+
+					<div class="table-wrap">
+					  <table class="tbl">
+					    <thead>
+					      <tr>
+					        <th style="width: 120px;">コード</th>
+					        <th>尺度名</th>
+					        <th style="width: 80px; text-align: right;">N</th>
+					        <th style="width: 110px; text-align: right;">平均</th>
+					        <th style="width: 110px; text-align: right;">SD</th>
+					        <th style="width: 110px; text-align: right;">中央値</th>
+					      </tr>
+					    </thead>
+
+					    <tbody>
+					      <tr th:if="${scaleAvgs == null || #lists.isEmpty(scaleAvgs)}">
+					        <td colspan="6" class="muted">下位尺度データがありません（回答がない、または尺度設定が未投入の可能性があります）</td>
+					      </tr>
+
+					      <tr th:each="s : ${scaleAvgs}">
+					        <td th:text="${s.scaleCode}">S1</td>
+					        <td th:text="${s.scaleName}">尺度名</td>
+
+					        <td style="text-align: right;" th:text="${s.respondentCount}">0</td>
+
+					        <td style="text-align: right;"
+					            th:text="${s.avgScore == null ? '-' : #numbers.formatDecimal(s.avgScore, 1, 2)}">-</td>
+
+					        <td style="text-align: right;"
+					            th:text="${s.sdScore == null ? '-' : #numbers.formatDecimal(s.sdScore, 1, 2)}">-</td>
+
+					        <td style="text-align: right;"
+					            th:text="${s.medianScore == null ? '-' : #numbers.formatDecimal(s.medianScore, 1, 2)}">-</td>
+					      </tr>
+					    </tbody>
+					  </table>
+					</div>
+
 				</section>
 
 				<!-- グラフ（いまはプレースホルダ） -->
