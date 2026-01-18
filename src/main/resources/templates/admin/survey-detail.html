@@ -26,7 +26,7 @@
 						公開中
 					</span>
 					<p class="muted">
-					  （内部ステータス：<span th:text="${survey.status}"></span>）
+						（内部ステータス：<span th:text="${survey.status}"></span>）
 					</p>
 
 				</dd>
@@ -66,6 +66,8 @@
 							<option value="PUBLISHED" th:selected="${survey.status == 'PUBLISHED'}">公開中</option>
 							<option value="CLOSED" th:selected="${survey.status == 'CLOSED'}">終了（停止）</option>
 						</select>
+
+						<input type="hidden" name="status" th:if="${isEnded}" value="CLOSED" />
 
 						<p class="muted" th:if="${isEnded}">
 							※終了日時を過ぎているため、公開状態は「終了」に固定されます。再開する場合は終了日時を未来に変更するか削除してください。

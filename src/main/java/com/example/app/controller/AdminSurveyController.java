@@ -148,6 +148,43 @@ public class AdminSurveyController {
 		return "admin/survey-detail";
 	}
 
+	// ★追加：説明文・同意文を更新
+	@PostMapping("/admin/surveys/{surveyId}/consent-text")
+	public String updateConsentText(@PathVariable long surveyId,
+			@RequestParam(required = false) String description,
+			@RequestParam(required = false) String consentText) {
+
+		long updatedBy = 1L; // 管理者実装までは固定
+
+		// null → 空文字（運用しやすく）
+		String desc = (description == null) ? "" : description;
+		String consent = (consentText == null) ? "" : consentText;
+
+		// ===== ★倫理ガードここから =====
+
+		// 既に回答があるか？
+		int answerCount = adminResponseDao.countResponsesBySurveyId(surveyId, true);
+
+		if (answerCount > 0) {
+			// 回答がある場合は「同意文は変更不可」
+			// → DBの現在値で上書きする（説明文は変更OK）
+			var current = surveyDao.findConsentById(surveyId);
+			consent = (current.getConsentText() == null)
+					? ""
+					: current.getConsentText();
+		}
+
+		// ===== ★倫理ガードここまで =====
+
+		surveyDao.updateDescriptionAndConsent(
+				surveyId,
+				desc,
+				consent,
+				updatedBy);
+
+		return "redirect:/admin/surveys/" + surveyId;
+	}
+
 	private String calcDisplayStatusForDetail(SurveyDetailDto s, long nowMillis) {
 
 		String status = (s.getStatus() == null) ? "" : s.getStatus().toUpperCase();

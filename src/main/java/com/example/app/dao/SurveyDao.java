@@ -15,6 +15,7 @@ import com.example.app.dto.QuestionAvgDto;
 import com.example.app.dto.QuestionCountDto;
 import com.example.app.dto.QuestionDto;
 import com.example.app.dto.ScaleAvgDto;
+import com.example.app.dto.SurveyConsentDto;
 import com.example.app.dto.SurveyDetailDto;
 import com.example.app.dto.SurveyDto;
 
@@ -415,6 +416,41 @@ public class SurveyDao {
 				""";
 
 		return jdbcTemplate.update(sql, status, openAt, closeAt, updatedBy, surveyId);
+	}
+
+	// ===== 同意画面用（説明文・同意文）=====
+	public SurveyConsentDto findConsentById(long surveyId) {
+		String sql = """
+				SELECT survey_id, title, description, consent_text, status, open_at, close_at
+				FROM surveys
+				WHERE survey_id = ?
+				""";
+
+		return jdbcTemplate.queryForObject(sql, (rs, rowNum) -> {
+			SurveyConsentDto dto = new SurveyConsentDto();
+			dto.setSurveyId(rs.getLong("survey_id"));
+			dto.setTitle(rs.getString("title"));
+			dto.setDescription(rs.getString("description"));
+			dto.setConsentText(rs.getString("consent_text"));
+			dto.setStatus(rs.getString("status"));
+			dto.setOpenAt(rs.getTimestamp("open_at"));
+			dto.setCloseAt(rs.getTimestamp("close_at"));
+			return dto;
+		}, surveyId);
+	}
+
+	// ===== 説明文・同意文 更新（管理者）=====
+	public int updateDescriptionAndConsent(long surveyId,
+			String description, String consentText,
+			long updatedBy) {
+
+		String sql = """
+				UPDATE surveys
+				SET description = ?, consent_text = ?, updated_by = ?
+				WHERE survey_id = ?
+				""";
+
+		return jdbcTemplate.update(sql, description, consentText, updatedBy, surveyId);
 	}
 
 }

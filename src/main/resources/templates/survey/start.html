@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+	<meta charset="UTF-8">
+	<title th:text="${survey.title}">アンケート開始</title>
+	<link rel="stylesheet" th:href="@{/css/common.css}">
+</head>
+
+<body>
+	<div class="container">
+		<h1 class="page-title" th:text="${survey.title}">アンケート</h1>
+
+		<div class="card" style="margin-bottom: 12px;">
+			<h2 class="section-title">説明</h2>
+			<p class="prewrap" th:text="${descriptionForDisplay}"></p>
+			</p>
+		</div>
+
+		<div class="card" style="margin-bottom: 12px;">
+			<h2 class="section-title">同意文</h2>
+			<p class="prewrap" th:text="${consentForDisplay}"></p>
+			</p>
+		</div>
+
+		<form th:action="@{/survey/{id}/consent(id=${survey.surveyId})}" method="post">
+			<p th:if="${error}" class="error" th:text="${error}"></p>
+
+			<label style="display:flex; gap:8px; align-items:center;">
+				<input type="checkbox" name="agree" value="1">
+				<span>上記に同意して回答を開始します</span>
+			</label>
+
+			<div class="actions" style="margin-top: 12px;">
+				<button type="submit">同意して開始</button>
+			</div>
+		</form>
+	</div>
+</body>
+
+</html>
