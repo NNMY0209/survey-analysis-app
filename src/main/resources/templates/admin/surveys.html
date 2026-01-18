@@ -2,46 +2,57 @@
 <html xmlns:th="http://www.thymeleaf.org">
 
 <head>
-  <meta charset="UTF-8">
-  <title>アンケート一覧</title>
-  <link rel="stylesheet" th:href="@{/css/common.css}">
+	<meta charset="UTF-8">
+	<title>アンケート一覧</title>
+	<link rel="stylesheet" th:href="@{/css/common.css}">
 </head>
 
 <body>
 
-  <div th:replace="fragments/admin-header :: header"></div>
+	<div th:replace="fragments/admin-header :: header"></div>
 
-  <div class="container">
-    <h1 class="page-title">アンケート一覧</h1>
+	<div class="container">
+		<h1 class="page-title">アンケート一覧</h1>
 
-    <div class="card">
-      <table class="table">
-        <thead>
-          <tr>
-            <th class="nowrap">ID</th>
-            <th>タイトル</th>
-            <th class="nowrap">ステータス</th>
-            <th class="nowrap">公開開始</th>
-            <th class="nowrap">公開終了</th>
-            <th class="nowrap">回答数</th>
-          </tr>
-        </thead>
+		<div class="card">
+			<table class="table">
+				<thead>
+					<tr>
+						<th class="nowrap">ID</th>
+						<th>タイトル</th>
+						<th class="nowrap">ステータス</th>
+						<th class="nowrap">公開開始</th>
+						<th class="nowrap">公開終了</th>
+						<th class="nowrap">回答数</th>
+					</tr>
+				</thead>
 
-        <tbody>
-          <tr th:each="s : ${surveys}">
-            <td class="nowrap" th:text="${s.surveyId}"></td>
-            <td>
-              <a th:href="@{'/admin/surveys/' + ${s.surveyId}}" th:text="${s.title}"></a>
-            </td>
-            <td class="nowrap" th:text="${s.status}"></td>
-            <td class="nowrap" th:text="${s.openAt}"></td>
-            <td class="nowrap" th:text="${s.closeAt}"></td>
-            <td class="nowrap" th:text="${s.answerCount}">0</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
+				<tbody>
+					<tr th:each="s : ${surveys}">
+						<td class="nowrap" th:text="${s.surveyId}"></td>
+
+						<td>
+							<a th:href="@{'/admin/surveys/' + ${s.surveyId}}" th:text="${s.title}"></a>
+						</td>
+
+						<!-- ★ここだけ変更 -->
+						<td class="nowrap">
+							<span class="status-badge" th:classappend="${s.displayStatusClass}"
+								th:text="${s.displayStatus}">
+								公開中
+							</span>
+						</td>
+
+						<td class="nowrap" th:text="${s.openAt}"></td>
+						<td class="nowrap" th:text="${s.closeAt}"></td>
+						<td class="nowrap" th:text="${s.answerCount}">0</td>
+					</tr>
+				</tbody>
+			</table>
+
+		</div>
+	</div>
 
 </body>
+
 </html>

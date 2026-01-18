@@ -10,37 +10,52 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 import com.example.app.dto.AnswerSubmitRequestDto;
 import com.example.app.service.SurveyAnswerService;
+import com.example.app.service.SurveyAvailability;
+import com.example.app.service.SurveyAvailabilityService;
 
 @Controller
 @RequestMapping("/survey")
 public class SurveyAnswerController {
 
 	private final SurveyAnswerService surveyAnswerService;
+	private final SurveyAvailabilityService availabilityService;
 
-	public SurveyAnswerController(SurveyAnswerService surveyAnswerService) {
+	public SurveyAnswerController(SurveyAnswerService surveyAnswerService,
+			SurveyAvailabilityService availabilityService) {
 		this.surveyAnswerService = surveyAnswerService;
+		this.availabilityService = availabilityService;
 	}
 
-	/** 回答画面表示（response_id を発行して、設問＋選択肢を表示） */
 	@GetMapping("/{surveyId}/answer")
 	public String showAnswer(@PathVariable long surveyId, Model model) {
+
+		var av = availabilityService.check(surveyId);
+		if (av != SurveyAvailability.OK) {
+			model.addAttribute("availability", av);
+			model.addAttribute("info", availabilityService.getInfo(surveyId));
+			return "survey/out_of_period";
+		}
+
 		var vm = surveyAnswerService.buildAnswerView(surveyId);
 		model.addAttribute("vm", vm);
 		return "survey/answer";
 	}
 
-	/** 回答送信（SINGLE/MULTI/TEXT を question_answers に保存） */
 	@PostMapping("/{surveyId}/submit")
-	public String submit(@PathVariable long surveyId, @ModelAttribute AnswerSubmitRequestDto req) {
-		// PathのsurveyIdを正として上書き（改ざん対策の最低限）
+	public String submit(@PathVariable long surveyId, @ModelAttribute AnswerSubmitRequestDto req, Model model) {
 		req.setSurveyId(surveyId);
 
-		surveyAnswerService.submit(req);
+		var av = availabilityService.check(surveyId);
+		if (av != SurveyAvailability.OK) {
+			model.addAttribute("availability", av);
+			model.addAttribute("info", availabilityService.getInfo(surveyId));
+			return "survey/out_of_period";
+		}
 
+		surveyAnswerService.submit(req);
 		return "redirect:/survey/" + surveyId + "/thanks";
 	}
 
-	/** 完了画面 */
 	@GetMapping("/{surveyId}/thanks")
 	public String thanks(@PathVariable long surveyId) {
 		return "survey/thanks";

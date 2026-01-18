@@ -304,85 +304,117 @@ public class SurveyDao {
 	// ==== 下位尺度ごとの平均（SINGLE / COMPLETEDのみ）====
 	public List<ScaleAvgDto> findScaleAveragesBySurveyId(long surveyId) {
 
-	    String sql = """
-	        WITH scored AS (
-	          SELECT
-	            s.scale_id,
-	            s.scale_code,
-	            s.scale_name,
-	            r.respondent_id,
-	            (
-	              CASE
-	                WHEN q.is_reverse = 1 THEN (qstat.max_score + qstat.min_score - o.score)
-	                ELSE o.score
-	              END
-	            ) * sq.weight AS wscore,
-	            sq.weight AS w
-	          FROM scales s
-	          JOIN scale_questions sq ON sq.scale_id = s.scale_id
-	          JOIN questions q ON q.question_id = sq.question_id
-	          JOIN question_answers a ON a.question_id = q.question_id
-	          JOIN question_options o ON o.option_id = a.option_id
-	          JOIN response_sessions rs ON rs.response_id = a.response_id
-	          JOIN respondents r ON r.respondent_id = rs.respondent_id
-	          JOIN (
-	            SELECT question_id, MIN(score) AS min_score, MAX(score) AS max_score
-	            FROM question_options
-	            GROUP BY question_id
-	          ) qstat ON qstat.question_id = q.question_id
-	          WHERE s.survey_id = ?
-	            AND rs.status = 'COMPLETED'
-	            AND q.question_type = 'SINGLE'
-	        ),
-	        per_resp AS (
-	          SELECT
-	            scale_id,
-	            scale_code,
-	            scale_name,
-	            respondent_id,
-	            SUM(wscore) / NULLIF(SUM(w), 0) AS scale_score
-	          FROM scored
-	          GROUP BY scale_id, scale_code, scale_name, respondent_id
-	        ),
-	        ranked AS (
-	          SELECT
-	            scale_id,
-	            scale_code,
-	            scale_name,
-	            respondent_id,
-	            scale_score,
-	            ROW_NUMBER() OVER (PARTITION BY scale_id ORDER BY scale_score) AS rn,
-	            COUNT(*) OVER (PARTITION BY scale_id) AS cnt
-	          FROM per_resp
-	        )
-	        SELECT
-	          scale_id,
-	          scale_code,
-	          scale_name,
-	          COUNT(*) AS respondent_count,
-	          AVG(scale_score) AS avg_score,
-	          STDDEV_SAMP(scale_score) AS sd_score,
-	          AVG(CASE
-	                WHEN rn IN ((cnt + 1) DIV 2, (cnt + 2) DIV 2)
-	                THEN scale_score
-	              END) AS median_score
-	        FROM ranked
-	        GROUP BY scale_id, scale_code, scale_name
-	        ORDER BY scale_id
-	        """;
+		String sql = """
+				WITH scored AS (
+				  SELECT
+				    s.scale_id,
+				    s.scale_code,
+				    s.scale_name,
+				    r.respondent_id,
+				    (
+				      CASE
+				        WHEN q.is_reverse = 1 THEN (qstat.max_score + qstat.min_score - o.score)
+				        ELSE o.score
+				      END
+				    ) * sq.weight AS wscore,
+				    sq.weight AS w
+				  FROM scales s
+				  JOIN scale_questions sq ON sq.scale_id = s.scale_id
+				  JOIN questions q ON q.question_id = sq.question_id
+				  JOIN question_answers a ON a.question_id = q.question_id
+				  JOIN question_options o ON o.option_id = a.option_id
+				  JOIN response_sessions rs ON rs.response_id = a.response_id
+				  JOIN respondents r ON r.respondent_id = rs.respondent_id
+				  JOIN (
+				    SELECT question_id, MIN(score) AS min_score, MAX(score) AS max_score
+				    FROM question_options
+				    GROUP BY question_id
+				  ) qstat ON qstat.question_id = q.question_id
+				  WHERE s.survey_id = ?
+				    AND rs.status = 'COMPLETED'
+				    AND q.question_type = 'SINGLE'
+				),
+				per_resp AS (
+				  SELECT
+				    scale_id,
+				    scale_code,
+				    scale_name,
+				    respondent_id,
+				    SUM(wscore) / NULLIF(SUM(w), 0) AS scale_score
+				  FROM scored
+				  GROUP BY scale_id, scale_code, scale_name, respondent_id
+				),
+				ranked AS (
+				  SELECT
+				    scale_id,
+				    scale_code,
+				    scale_name,
+				    respondent_id,
+				    scale_score,
+				    ROW_NUMBER() OVER (PARTITION BY scale_id ORDER BY scale_score) AS rn,
+				    COUNT(*) OVER (PARTITION BY scale_id) AS cnt
+				  FROM per_resp
+				)
+				SELECT
+				  scale_id,
+				  scale_code,
+				  scale_name,
+				  COUNT(*) AS respondent_count,
+				  AVG(scale_score) AS avg_score,
+				  STDDEV_SAMP(scale_score) AS sd_score,
+				  AVG(CASE
+				        WHEN rn IN ((cnt + 1) DIV 2, (cnt + 2) DIV 2)
+				        THEN scale_score
+				      END) AS median_score
+				FROM ranked
+				GROUP BY scale_id, scale_code, scale_name
+				ORDER BY scale_id
+				""";
 
-	    return jdbcTemplate.query(sql, (rs, rowNum) -> {
-	        ScaleAvgDto dto = new ScaleAvgDto();
-	        dto.setScaleId(rs.getLong("scale_id"));
-	        dto.setScaleCode(rs.getString("scale_code"));
-	        dto.setScaleName(rs.getString("scale_name"));
-	        dto.setRespondentCount(rs.getLong("respondent_count"));
-	        dto.setAvgScore(rs.getDouble("avg_score"));
-	        dto.setSdScore(rs.getDouble("sd_score"));
-	        dto.setMedianScore(rs.getDouble("median_score"));
+		return jdbcTemplate.query(sql, (rs, rowNum) -> {
+			ScaleAvgDto dto = new ScaleAvgDto();
+			dto.setScaleId(rs.getLong("scale_id"));
+			dto.setScaleCode(rs.getString("scale_code"));
+			dto.setScaleName(rs.getString("scale_name"));
+			dto.setRespondentCount(rs.getLong("respondent_count"));
+			dto.setAvgScore(rs.getDouble("avg_score"));
+			dto.setSdScore(rs.getDouble("sd_score"));
+			dto.setMedianScore(rs.getDouble("median_score"));
 
-	        return dto;
-	    }, surveyId);
+			return dto;
+		}, surveyId);
+	}
+
+	// ===== 公開設定（回答アクセス判定用）=====
+	public SurveyDetailDto findPublishSettingsById(long surveyId) {
+		String sql = """
+				SELECT survey_id, status, open_at, close_at
+				FROM surveys
+				WHERE survey_id = ?
+				""";
+
+		return jdbcTemplate.queryForObject(sql, (rs, rowNum) -> {
+			SurveyDetailDto dto = new SurveyDetailDto();
+			dto.setSurveyId(rs.getLong("survey_id"));
+			dto.setStatus(rs.getString("status"));
+			dto.setOpenAt(rs.getTimestamp("open_at"));
+			dto.setCloseAt(rs.getTimestamp("close_at"));
+			return dto;
+		}, surveyId);
+	}
+
+	// ===== 公開設定 更新（管理者）=====
+	public int updatePublishSettings(long surveyId, String status,
+			java.sql.Timestamp openAt, java.sql.Timestamp closeAt,
+			long updatedBy) {
+
+		String sql = """
+				UPDATE surveys
+				SET status = ?, open_at = ?, close_at = ?, updated_by = ?
+				WHERE survey_id = ?
+				""";
+
+		return jdbcTemplate.update(sql, status, openAt, closeAt, updatedBy, surveyId);
 	}
 
 }

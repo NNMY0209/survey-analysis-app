@@ -2,87 +2,143 @@
 <html xmlns:th="http://www.thymeleaf.org">
 
 <head>
-  <meta charset="UTF-8">
-  <title>アンケート詳細</title>
-  <link rel="stylesheet" th:href="@{/css/common.css}">
+	<meta charset="UTF-8">
+	<title>アンケート詳細</title>
+	<link rel="stylesheet" th:href="@{/css/common.css}">
 </head>
 
 <body>
 
-  <div th:replace="fragments/admin-header :: header"></div>
+	<div th:replace="fragments/admin-header :: header"></div>
 
-  <div class="container">
-    <h1 class="page-title">アンケート詳細</h1>
+	<div class="container">
+		<h1 class="page-title">アンケート詳細</h1>
 
-    <div class="card" style="margin-bottom: 12px;">
-      <h2 class="section-title">【アンケート基本情報】</h2>
-      <dl class="kv">
-        <dt>アンケート名</dt>
-        <dd th:text="${survey.title}">アンケート①</dd>
+		<div class="card" style="margin-bottom: 12px;">
+			<h2 class="section-title">【アンケート基本情報】</h2>
+			<dl class="kv">
+				<dt>アンケート名</dt>
+				<dd th:text="${survey.title}">アンケート①</dd>
 
-        <dt>公開状況</dt>
-        <dd th:text="${survey.status}">公開</dd>
+				<dt>公開状況</dt>
+				<dd>
+					<span class="status-badge" th:classappend="${displayStatusClass}" th:text="${displayStatus}">
+						公開中
+					</span>
+					<p class="muted">
+					  （内部ステータス：<span th:text="${survey.status}"></span>）
+					</p>
 
-        <dt>締切日</dt>
-        <dd>
-          <span th:text="${survey.closeAt}">yyyy/MM/dd</span>
-        </dd>
+				</dd>
 
-        <dt class="muted">ID</dt>
-        <dd class="muted" th:text="${survey.surveyId}">1</dd>
-      </dl>
-    </div>
 
-    <div class="card" style="margin-bottom: 12px;">
-      <h2 class="section-title">【回答状況】</h2>
-      <dl class="kv">
-        <dt>回答数</dt>
-        <dd><span th:text="${answerCount}">xxx</span>件</dd>
-      </dl>
-    </div>
+				<dt>締切日</dt>
+				<dd>
+					<span th:text="${survey.closeAt}">yyyy/MM/dd</span>
+				</dd>
 
-    <div class="actions">
-      <a th:href="@{|/admin/surveys/${survey.surveyId}/summary|}">集計結果を見る</a>
-      <a th:href="@{|/admin/surveys/${survey.surveyId}/responses|}">回答一覧を見る</a>
-      <a th:href="@{|/admin/surveys/${survey.surveyId}/responses/import|}">回答データを登録する</a>
-      <a th:href="@{/admin/surveys}">一覧に戻る</a>
-    </div>
+				<dt class="muted">ID</dt>
+				<dd class="muted" th:text="${survey.surveyId}">1</dd>
+			</dl>
+		</div>
 
-    <!-- 設問一覧（必要なときだけ） -->
-    <details class="summary">
-      <summary>設問一覧を表示</summary>
-      <div class="card" style="margin-top: 10px;">
-        <div class="scroll-box">
-          <table class="table">
-            <thead>
-              <tr>
-                <th class="nowrap">順序</th>
-                <th>設問文</th>
-                <th class="nowrap">タイプ</th>
-                <th class="nowrap">用途</th>
-                <th class="nowrap">逆転</th>
-                <th class="nowrap">必須</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr th:each="q : ${questions}">
-                <td class="nowrap" th:text="${q.displayOrder}"></td>
-                <td th:text="${q.questionText}"></td>
-                <td class="nowrap" th:text="${q.questionType}"></td>
-                <td class="nowrap" th:text="${q.questionRole}"></td>
-                <td class="nowrap" th:text="${q.isReverse == 1 ? 'Yes' : 'No'}"></td>
-                <td class="nowrap" th:text="${q.isRequired == 1 ? 'Yes' : 'No'}"></td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+		<div class="card" style="margin-bottom: 12px;">
+			<h2 class="section-title">【回答状況】</h2>
+			<dl class="kv">
+				<dt>回答数</dt>
+				<dd><span th:text="${answerCount}">xxx</span>件</dd>
+			</dl>
+		</div>
 
-        <!-- 選択肢の表示は「設問詳細」を作るか、ここでは省略が無難 -->
-        <p class="muted" style="margin: 10px 0 0;">※選択肢の詳細は今後「設問詳細」または別表示で拡張可能</p>
-      </div>
-    </details>
+		<div class="card" style="margin-bottom: 12px;">
+			<h2 class="section-title">【公開設定】</h2>
 
-  </div>
+			<form th:action="@{/admin/surveys/{id}/publish(id=${survey.surveyId})}" method="post">
+
+				<!-- エラー表示（Controllerで publishError を入れた場合） -->
+				<p class="error" th:if="${publishError}" th:text="${publishError}"></p>
+
+				<dl class="kv">
+					<dt>公開状態</dt>
+					<dd>
+						<select name="status" th:disabled="${isEnded}">
+							<option value="DRAFT" th:selected="${survey.status == 'DRAFT'}">下書き（非公開）</option>
+							<option value="PUBLISHED" th:selected="${survey.status == 'PUBLISHED'}">公開中</option>
+							<option value="CLOSED" th:selected="${survey.status == 'CLOSED'}">終了（停止）</option>
+						</select>
+
+						<p class="muted" th:if="${isEnded}">
+							※終了日時を過ぎているため、公開状態は「終了」に固定されます。再開する場合は終了日時を未来に変更するか削除してください。
+						</p>
+
+						<p class="muted" th:if="${isManualClosedDuringOpen}">
+							※現在このアンケートは手動で停止中です（期間内でも回答できません）。
+						</p>
+					</dd>
+
+					<dt>公開開始日時</dt>
+					<dd>
+						<input type="datetime-local" name="openAt" step="60" th:value="${survey.openAt != null
+	                   ? #temporals.format(survey.openAt.toLocalDateTime(), 'yyyy-MM-dd''T''HH:mm')
+	                   : ''}" />
+					</dd>
+
+					<dt>公開終了日時</dt>
+					<dd> <input type="datetime-local" name="closeAt" step="60" th:value="${survey.closeAt != null
+					                   ? #temporals.format(survey.closeAt.toLocalDateTime(), 'yyyy-MM-dd''T''HH:mm')
+					                   : ''}" />
+					</dd>
+				</dl>
+
+				<div class="actions">
+					<button type="submit">公開設定を更新</button>
+				</div>
+			</form>
+		</div>
+
+
+		<div class="actions">
+			<a th:href="@{|/admin/surveys/${survey.surveyId}/summary|}">集計結果を見る</a>
+			<a th:href="@{|/admin/surveys/${survey.surveyId}/responses|}">回答一覧を見る</a>
+			<a th:href="@{|/admin/surveys/${survey.surveyId}/responses/import|}">回答データを登録する</a>
+			<a th:href="@{/admin/surveys}">一覧に戻る</a>
+		</div>
+
+		<!-- 設問一覧（必要なときだけ） -->
+		<details class="summary">
+			<summary>設問一覧を表示</summary>
+			<div class="card" style="margin-top: 10px;">
+				<div class="scroll-box">
+					<table class="table">
+						<thead>
+							<tr>
+								<th class="nowrap">順序</th>
+								<th>設問文</th>
+								<th class="nowrap">タイプ</th>
+								<th class="nowrap">用途</th>
+								<th class="nowrap">逆転</th>
+								<th class="nowrap">必須</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr th:each="q : ${questions}">
+								<td class="nowrap" th:text="${q.displayOrder}"></td>
+								<td th:text="${q.questionText}"></td>
+								<td class="nowrap" th:text="${q.questionType}"></td>
+								<td class="nowrap" th:text="${q.questionRole}"></td>
+								<td class="nowrap" th:text="${q.isReverse == 1 ? 'Yes' : 'No'}"></td>
+								<td class="nowrap" th:text="${q.isRequired == 1 ? 'Yes' : 'No'}"></td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+
+				<!-- 選択肢の表示は「設問詳細」を作るか、ここでは省略が無難 -->
+				<p class="muted" style="margin: 10px 0 0;">※選択肢の詳細は今後「設問詳細」または別表示で拡張可能</p>
+			</div>
+		</details>
+
+	</div>
 </body>
 
 </html>

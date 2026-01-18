@@ -57,4 +57,25 @@ public class AdminSurveyRowDto {
 	public void setAnswerCount(int answerCount) {
 		this.answerCount = answerCount;
 	}
+
+	private String displayStatus; // 一覧表示用
+
+	public String getDisplayStatus() {
+		return displayStatus;
+	}
+
+	public void setDisplayStatus(String displayStatus) {
+		this.displayStatus = displayStatus;
+	}
+
+	private String displayStatusClass;
+
+	public String getDisplayStatusClass() {
+		return displayStatusClass;
+	}
+
+	public void setDisplayStatusClass(String displayStatusClass) {
+		this.displayStatusClass = displayStatusClass;
+	}
+
 }

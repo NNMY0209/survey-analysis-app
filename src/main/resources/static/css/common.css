@@ -66,19 +66,22 @@
 
 /* Collapsible */
 details.summary {
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 6px 10px;
-  background: #fff;
+	border: 1px solid var(--border);
+	border-radius: 10px;
+	padding: 6px 10px;
+	background: #fff;
 }
+
 details.summary[open] {
-  background: #fbfcff;
+	background: #fbfcff;
 }
+
 details.summary summary {
-  list-style: none;
+	list-style: none;
 }
+
 details.summary summary::-webkit-details-marker {
-  display:none;
+	display: none;
 }
 
 
@@ -226,4 +229,51 @@ a:hover {
 #tab-scales:checked~.tab-panels #panel-scales,
 #tab-graph:checked~.tab-panels #panel-graph {
 	display: block;
+}
+
+/* ===== ステータスバッジ ===== */
+.status-badge {
+	display: inline-block;
+	padding: 2px 10px;
+	border-radius: 12px;
+	font-size: 12px;
+	font-weight: 600;
+	line-height: 1.6;
+	white-space: nowrap;
+}
+
+/* 公開中 */
+.badge-live {
+	background-color: #e6f4ea;
+	color: #1e7e34;
+}
+
+/* 開始前 */
+.badge-scheduled {
+	background-color: #e8f0fe;
+	color: #1a73e8;
+}
+
+/* 一時停止（下書き） */
+.badge-paused {
+	background-color: #fff4e5;
+	color: #b26a00;
+}
+
+/* 手動停止 */
+.badge-stopped {
+	background-color: #fdecea;
+	color: #c62828;
+}
+
+/* 終了 */
+.badge-ended {
+	background-color: #f1f3f4;
+	color: #5f6368;
+}
+
+/* 下書き（期間外など） */
+.badge-draft {
+	background-color: #f1f3f4;
+	color: #5f6368;
 }

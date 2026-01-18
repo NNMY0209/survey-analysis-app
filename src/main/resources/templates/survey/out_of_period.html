@@ -1,0 +1,25 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+	<meta charset="utf-8">
+	<title>回答期間外</title>
+</head>
+
+<body>
+	<h1>回答期間外です</h1>
+
+	<p th:if="${availability.name() == 'NOT_PUBLISHED'}">このアンケートは現在公開されていません。</p>
+	<p th:if="${availability.name() == 'NOT_OPEN_YET'}">このアンケートは開始前です。</p>
+	<p th:if="${availability.name() == 'CLOSED'}">このアンケートは終了しました。</p>
+
+	<!-- 必要なら表示 -->
+	<div>
+		<p>開始日時：<span th:text="${info.openAt}">-</span></p>
+		<p>終了日時：<span th:text="${info.closeAt}">-</span></p>
+	</div>
+
+	<a th:href="@{/}">トップへ戻る</a>
+</body>
+
+</html>
