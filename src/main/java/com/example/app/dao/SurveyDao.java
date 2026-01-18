@@ -56,7 +56,7 @@ public class SurveyDao {
 	// ===== アンケート詳細 =====
 	public SurveyDetailDto findDetailById(long surveyId) {
 		String sql = """
-				SELECT survey_id, title, status, open_at, close_at
+				SELECT survey_id, title, description, consent_text, status, open_at, close_at
 				FROM surveys
 				WHERE survey_id = ?
 				""";
@@ -65,6 +65,8 @@ public class SurveyDao {
 			SurveyDetailDto dto = new SurveyDetailDto();
 			dto.setSurveyId(rs.getLong("survey_id"));
 			dto.setTitle(rs.getString("title"));
+			dto.setDescription(rs.getString("description"));
+			dto.setConsentText(rs.getString("consent_text"));
 			dto.setStatus(rs.getString("status"));
 			dto.setOpenAt(rs.getTimestamp("open_at"));
 			dto.setCloseAt(rs.getTimestamp("close_at"));

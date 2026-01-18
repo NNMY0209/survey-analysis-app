@@ -281,3 +281,13 @@ a:hover {
 .prewrap {
 	white-space: pre-wrap;
 }
+
+.preview-text {
+	padding: 8px;
+	background-color: #f5f6f8;
+	color: #666;
+	border: 1px solid #ddd;
+	border-radius: 4px;
+	white-space: pre-wrap;
+	font-size: 0.95em;
+}

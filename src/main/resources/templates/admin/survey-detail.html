@@ -43,12 +43,49 @@
 		</div>
 
 		<div class="card" style="margin-bottom: 12px;">
-			<h2 class="section-title">【回答状況】</h2>
-			<dl class="kv">
-				<dt>回答数</dt>
-				<dd><span th:text="${answerCount}">xxx</span>件</dd>
-			</dl>
+			<h2 class="section-title">【説明文・同意文】</h2>
+
+			<p class="muted" th:if="${answerCount > 0}">
+				※回答が存在するため、同意文の変更はできません（説明文は変更できます）。
+			</p>
+
+			<form th:action="@{/admin/surveys/{id}/consent-text(id=${survey.surveyId})}" method="post">
+
+				<dl class="kv">
+					<dt>説明文（現在の内容）</dt>
+					<dd>
+						<div class="preview-text" th:text="${hasDescription ? survey.description : '（未登録：定型文が使用されます）'}">
+						</div>
+
+					</dd>
+
+					<dt>説明文（編集）</dt>
+					<dd>
+						<textarea name="description" rows="6" style="width:100%;"
+							th:text="${survey.description}"></textarea>
+					</dd>
+
+					<dt>同意文（現在の内容）</dt>
+					<dd>
+						<div class="preview-text" th:text="${hasConsentText ? survey.consentText : '（未登録：定型文が使用されます）'}">
+						</div>
+
+					</dd>
+
+					<dt>同意文（編集）</dt>
+					<dd>
+						<textarea name="consentText" rows="6" style="width:100%;" th:disabled="${answerCount > 0}"
+							th:text="${survey.consentText}"></textarea>
+					</dd>
+
+				</dl>
+
+				<div class="actions">
+					<button type="submit">説明文・同意文を更新</button>
+				</div>
+			</form>
 		</div>
+
 
 		<div class="card" style="margin-bottom: 12px;">
 			<h2 class="section-title">【公開設定】</h2>
@@ -98,6 +135,13 @@
 			</form>
 		</div>
 
+		<div class="card" style="margin-bottom: 12px;">
+			<h2 class="section-title">【回答状況】</h2>
+			<dl class="kv">
+				<dt>回答数</dt>
+				<dd><span th:text="${answerCount}">xxx</span>件</dd>
+			</dl>
+		</div>
 
 		<div class="actions">
 			<a th:href="@{|/admin/surveys/${survey.surveyId}/summary|}">集計結果を見る</a>

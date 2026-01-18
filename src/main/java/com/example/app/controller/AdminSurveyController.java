@@ -116,6 +116,10 @@ public class AdminSurveyController {
 	public String surveyDetail(@PathVariable long surveyId, Model model) {
 
 		SurveyDetailDto survey = surveyDao.findDetailById(surveyId);
+		boolean hasDescription = survey.getDescription() != null && !survey.getDescription().trim().isEmpty();
+
+		boolean hasConsentText = survey.getConsentText() != null && !survey.getConsentText().trim().isEmpty();
+
 		List<QuestionDto> questions = surveyDao.findQuestionsBySurveyId(surveyId);
 		Map<Long, List<OptionDto>> optionMap = surveyDao.findOptionsBySurveyId(surveyId);
 
@@ -133,6 +137,9 @@ public class AdminSurveyController {
 		String displayStatus = calcDisplayStatusForDetail(survey, nowMillis);
 		String displayStatusClass = calcDisplayStatusClassForDetail(survey, nowMillis);
 
+		model.addAttribute("hasDescription", hasDescription);
+		model.addAttribute("hasConsentText", hasConsentText);
+
 		model.addAttribute("isEnded", isEnded);
 		model.addAttribute("isManualClosedDuringOpen", isManualClosedDuringOpen);
 
@@ -144,6 +151,8 @@ public class AdminSurveyController {
 		model.addAttribute("questions", questions);
 		model.addAttribute("optionMap", optionMap);
 		model.addAttribute("answerCount", answerCount);
+
+		model.addAttribute("survey", survey);
 
 		return "admin/survey-detail";
 	}
