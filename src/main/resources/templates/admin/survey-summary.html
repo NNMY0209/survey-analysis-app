@@ -199,7 +199,127 @@
 
 				<!-- グラフ（いまはプレースホルダ） -->
 				<section class="tab-panel" id="panel-graph">
-					<p class="muted">※ここに下位尺度別の棒グラフを表示します（次のステップ）。</p>
+					<p class="muted">					<h2>下位尺度グラフ（平均 ± SD）</h2>
+
+					<div style="max-width: 1100px;">
+					  <canvas id="scaleChart" height="120"></canvas>
+					</div>
+
+					<!-- Chart.js（CDN） -->
+					<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+					<!-- ThymeleafからJSへデータ受け渡し -->
+					<script th:inline="javascript">
+					  /*<![CDATA[*/
+					  const scaleAvgs = /*[[${scaleAvgs}]]*/ [];
+					  /*]]>*/
+					</script>
+
+					<script>
+					  // scaleAvgs は [{scaleCode, scaleName, respondentCount, avgScore, sdScore, medianScore}, ...] の想定
+					  const labels = (scaleAvgs || []).map(s => `${s.scaleCode} ${s.scaleName}`);
+					  const means  = (scaleAvgs || []).map(s => (s.avgScore ?? null));
+					  const sds    = (scaleAvgs || []).map(s => (s.sdScore ?? null));
+					  const ns     = (scaleAvgs || []).map(s => (s.respondentCount ?? null));
+
+					  // ざっくり見やすいように：Y軸範囲（データから自動算出、少し余白）
+					  const validMeans = means.filter(v => typeof v === 'number' && !Number.isNaN(v));
+					  const validSds   = sds.filter(v => typeof v === 'number' && !Number.isNaN(v));
+					  const maxY = validMeans.length
+					    ? Math.max(...validMeans.map((m, i) => m + (typeof sds[i] === 'number' ? sds[i] : 0)))
+					    : 5;
+					  const minY = validMeans.length
+					    ? Math.min(...validMeans.map((m, i) => m - (typeof sds[i] === 'number' ? sds[i] : 0)))
+					    : 0;
+
+					  // Chart.js標準にエラーバーは無いので、プラグイン無しの「縦線」描画で対応（軽量）
+					  const errorBarPlugin = {
+					    id: 'errorBarPlugin',
+					    afterDatasetsDraw(chart, args, pluginOptions) {
+					      const { ctx, scales: { x, y } } = chart;
+
+					      const meta = chart.getDatasetMeta(0);
+					      ctx.save();
+					      ctx.lineWidth = 1;
+
+					      meta.data.forEach((bar, i) => {
+					        const mean = means[i];
+					        const sd = sds[i];
+					        if (typeof mean !== 'number' || typeof sd !== 'number') return;
+
+					        const xCenter = bar.x;
+					        const yTop = y.getPixelForValue(mean + sd);
+					        const yBottom = y.getPixelForValue(mean - sd);
+
+					        // 縦線
+					        ctx.beginPath();
+					        ctx.moveTo(xCenter, yTop);
+					        ctx.lineTo(xCenter, yBottom);
+					        ctx.stroke();
+
+					        // 上下の小さな横線（キャップ）
+					        const cap = 6;
+					        ctx.beginPath();
+					        ctx.moveTo(xCenter - cap, yTop);
+					        ctx.lineTo(xCenter + cap, yTop);
+					        ctx.moveTo(xCenter - cap, yBottom);
+					        ctx.lineTo(xCenter + cap, yBottom);
+					        ctx.stroke();
+					      });
+
+					      ctx.restore();
+					    }
+					  };
+
+					  const ctx = document.getElementById('scaleChart');
+
+					  new Chart(ctx, {
+					    type: 'bar',
+					    data: {
+					      labels,
+					      datasets: [{
+					        label: 'Mean',
+					        data: means,
+					        borderWidth: 1
+					      }]
+					    },
+					    options: {
+					      responsive: true,
+					      plugins: {
+					        tooltip: {
+					          callbacks: {
+					            label: (context) => {
+					              const i = context.dataIndex;
+					              const mean = means[i];
+					              const sd = sds[i];
+					              const n = ns[i];
+					              const meanTxt = (typeof mean === 'number') ? mean.toFixed(2) : '-';
+					              const sdTxt = (typeof sd === 'number') ? sd.toFixed(2) : '-';
+					              return `Mean=${meanTxt}, SD=${sdTxt}, N=${n ?? '-'}`;
+					            }
+					          }
+					        },
+					        legend: { display: false }
+					      },
+					      scales: {
+					        y: {
+					          beginAtZero: false,
+					          suggestedMin: Math.floor((minY - 0.5) * 10) / 10,
+					          suggestedMax: Math.ceil((maxY + 0.5) * 10) / 10,
+					          title: { display: true, text: 'Score' }
+					        },
+					        x: {
+					          ticks: {
+					            maxRotation: 45,
+					            minRotation: 0
+					          }
+					        }
+					      }
+					    },
+					    plugins: [errorBarPlugin]
+					  });
+					</script>
+</p>
 				</section>
 
 			</div>
