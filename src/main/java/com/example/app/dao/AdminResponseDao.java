@@ -80,5 +80,18 @@ public class AdminResponseDao {
 		Integer n = jdbcTemplate.queryForObject(sql, Integer.class, surveyId);
 		return (n == null) ? 0 : n;
 	}
+	
+	public boolean existsAnyResponseBySurveyId(long surveyId) {
+	    String sql = """
+	        SELECT 1
+	          FROM response_sessions rs
+	          JOIN respondents r ON r.respondent_id = rs.respondent_id
+	         WHERE r.survey_id = ?
+	         LIMIT 1
+	        """;
+	    List<Integer> list = jdbcTemplate.query(sql, (rs, rowNum) -> 1, surveyId);
+	    return !list.isEmpty();
+	}
+
 
 }

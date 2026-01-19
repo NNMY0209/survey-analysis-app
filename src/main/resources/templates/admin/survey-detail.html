@@ -147,6 +147,13 @@
 			<a th:href="@{|/admin/surveys/${survey.surveyId}/summary|}">集計結果を見る</a>
 			<a th:href="@{|/admin/surveys/${survey.surveyId}/responses|}">回答一覧を見る</a>
 			<a th:href="@{|/admin/surveys/${survey.surveyId}/responses/import|}">回答データを登録する</a>
+			<a th:if="${canEditQuestions}" th:href="@{|/admin/surveys/${survey.surveyId}/questions/new|}">
+				設問を追加
+			</a>
+			<p th:unless="${canEditQuestions}" class="text-muted">
+				※回答があるため設問の追加・変更はできません。
+			</p>
+
 			<a th:href="@{/admin/surveys}">一覧に戻る</a>
 		</div>
 

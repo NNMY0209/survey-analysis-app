@@ -123,7 +123,7 @@ public class AdminSurveyController {
 		List<QuestionDto> questions = surveyDao.findQuestionsBySurveyId(surveyId);
 		Map<Long, List<OptionDto>> optionMap = surveyDao.findOptionsBySurveyId(surveyId);
 
-		int answerCount = adminResponseDao.countResponsesBySurveyId(surveyId, true);
+		int answerCount = adminResponseDao.countResponsesBySurveyId(surveyId, false);
 
 		long nowMillis = System.currentTimeMillis();
 
@@ -153,6 +153,8 @@ public class AdminSurveyController {
 		model.addAttribute("answerCount", answerCount);
 
 		model.addAttribute("survey", survey);
+
+		model.addAttribute("canEditQuestions", adminResponseDao.countResponsesBySurveyId(surveyId, false) == 0);
 
 		return "admin/survey-detail";
 	}
