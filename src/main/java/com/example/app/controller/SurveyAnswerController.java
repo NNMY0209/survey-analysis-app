@@ -25,14 +25,12 @@ public class SurveyAnswerController {
 	private final SurveyAvailabilityService availabilityService;
 	private final SurveyDao surveyDao;
 	private final HttpSession session;
-	private static final String DEFAULT_DESCRIPTION =
-	        "本アンケートは学習目的で実施しています。所要時間はおよそ5〜10分です。途中で中断しても問題ありません。";
+	private static final String DEFAULT_DESCRIPTION = "本アンケートは学習目的で実施しています。所要時間はおよそ5〜10分です。途中で中断しても問題ありません。";
 
-	private static final String DEFAULT_CONSENT =
-	        "以下を確認のうえ、同意いただける場合のみ回答を開始してください。\n"
-	      + "・回答は任意です。\n"
-	      + "・個人が特定される情報の入力は避けてください。\n"
-	      + "・集計結果は学習目的で利用します。";
+	private static final String DEFAULT_CONSENT = "以下を確認のうえ、同意いただける場合のみ回答を開始してください。\n"
+			+ "・回答は任意です。\n"
+			+ "・個人が特定される情報の入力は避けてください。\n"
+			+ "・集計結果は学習目的で利用します。";
 
 	public SurveyAnswerController(SurveyAnswerService surveyAnswerService,
 			SurveyAvailabilityService availabilityService,
@@ -87,8 +85,20 @@ public class SurveyAnswerController {
 
 		if (agree == null) {
 			var dto = surveyDao.findConsentById(surveyId);
+
+			String descriptionForDisplay = (dto.getDescription() == null || dto.getDescription().trim().isEmpty())
+					? DEFAULT_DESCRIPTION
+					: dto.getDescription();
+
+			String consentForDisplay = (dto.getConsentText() == null || dto.getConsentText().trim().isEmpty())
+					? DEFAULT_CONSENT
+					: dto.getConsentText();
+
 			model.addAttribute("survey", dto);
-			model.addAttribute("error", "同意にチェックしてください。");
+			model.addAttribute("descriptionForDisplay", descriptionForDisplay);
+			model.addAttribute("consentForDisplay", consentForDisplay);
+
+			model.addAttribute("error", "同意にチェックを入れてから「同意して開始」を押してください。");
 			return "survey/start";
 		}
 
