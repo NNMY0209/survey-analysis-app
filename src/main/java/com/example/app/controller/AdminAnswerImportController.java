@@ -34,7 +34,7 @@ public class AdminAnswerImportController {
 		var survey = surveyDao.findDetailById(surveyId);
 		model.addAttribute("survey", survey);
 
-		return "admin/answer-import.html";
+		return "admin/answer-import";
 	}
 
 	/** CSV取り込み実行 */
