@@ -7,3 +7,6 @@ survey_id,question_display_order,display_order,option_text,score,is_correct
 1,2,1,"検索機能",1,0
 1,2,2,"通知機能",1,0
 1,2,3,"レポート機能",1,0
+1,4,1,"1",0,0
+1,4,2,"2",0,1
+1,4,3,"3",0,0

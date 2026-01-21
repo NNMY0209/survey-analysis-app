@@ -12,6 +12,12 @@
 
   <div class="container">
     <h1 class="page-title">設問追加</h1>
+	
+	<div class="actions" style="margin-bottom:12px;">
+	  <a th:href="@{|/admin/surveys/${surveyId}|}">アンケート詳細に戻る</a>
+	  <a th:href="@{|/admin/surveys/${surveyId}/questions/import|}">CSVインポートへ</a>
+	</div>
+
 
     <p class="error" th:if="${error}" th:text="${error}"></p>
 
@@ -114,7 +120,6 @@
 
       <div class="actions">
         <button type="submit">登録</button>
-        <a th:href="@{|/admin/surveys/${surveyId}|}">キャンセル</a>
       </div>
     </form>
   </div>

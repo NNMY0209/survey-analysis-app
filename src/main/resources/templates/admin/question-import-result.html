@@ -1,0 +1,38 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+	<meta charset="utf-8">
+	<title>設問定義インポート結果</title>
+	<link rel="stylesheet" th:href="@{/css/common.css}">
+</head>
+
+<body>
+	<div th:replace="fragments/admin-header :: header"></div>
+
+	<div class="container">
+		<h1 class="page-title">設問定義インポート結果</h1>
+
+		<div class="card">
+			<p>総件数: <span th:text="${result.totalRows}">0</span></p>
+			<p>成功: <span th:text="${result.successRows}">0</span></p>
+
+			<div th:if="${#lists.isEmpty(result.errors)}">
+				<p class="muted">エラーはありません。</p>
+			</div>
+
+			<div th:if="${!#lists.isEmpty(result.errors)}">
+				<p class="error">エラー一覧</p>
+				<ul>
+					<li th:each="e : ${result.errors}" th:text="${e}"></li>
+				</ul>
+			</div>
+
+			<div class="actions">
+				<a th:href="@{|/admin/surveys/${survey.surveyId}|}">アンケート詳細へ戻る</a>
+			</div>
+		</div>
+	</div>
+</body>
+
+</html>

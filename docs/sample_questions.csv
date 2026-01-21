@@ -1,5 +1,5 @@
-survey_id,display_order,question_text,question_type,question_role,is_reverse,is_required
-1,1,"このサービスに満足していますか",SINGLE_CHOICE,NORMAL,0,1
-1,2,"利用した機能を選択してください",MULTI_CHOICE,NORMAL,0,0
-1,3,"ご意見・ご感想をお聞かせください",TEXT,NORMAL,0,0
-1,4,"あなたの年齢を入力してください",NUMBER,VALIDITY_CHECK,0,1
+survey_id,display_order,question_text,question_type,question_role,is_reverse,is_required,scales
+1,1,"このサービスに満足していますか",SINGLE_CHOICE,NORMAL,0,1,"SAT:1.0"
+1,2,"利用した機能を選択してください",MULTI_CHOICE,NORMAL,0,0,"USE:1.0|SAT:0.5"
+1,3,"ご意見・ご感想をお聞かせください",TEXT,NORMAL,0,0,
+1,4,"注意確認：この設問は『2』を選択してください",SINGLE_CHOICE,ATTENTION_CHECK,0,1,"ATT:1.0"

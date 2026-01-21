@@ -291,3 +291,79 @@ a:hover {
 	white-space: pre-wrap;
 	font-size: 0.95em;
 }
+
+.action-group {
+  margin-bottom: 12px;
+}
+
+.action-title {
+  font-size: 14px;
+  font-weight: bold;
+  color: #555;
+  margin-bottom: 6px;
+}
+
+.actions a {
+  display: inline-block;
+  margin: 4px 12px 4px 0; /* ← 横と縦に余白 */
+  line-height: 1.6;
+}
+
+details.action-group {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+details.action-group[open] {
+  background-color: #fafafa;
+}
+
+details.action-group a {
+  display: block;          /* ← 縦に並べる */
+  margin: 6px 0;           /* ← 行間 */
+}
+
+/* nav actions (survey detail links) */
+.nav-actions {
+  margin-top: 14px;
+}
+
+.nav-actions .action-group {
+  margin-bottom: 18px;
+}
+
+.nav-actions .action-title {
+  font-size: 14px;
+  font-weight: 700;
+  margin: 0 0 8px;
+}
+
+.nav-actions a {
+  display: inline-block;
+  margin: 6px 14px 6px 0;
+  line-height: 1.7;
+}
+
+.nav-actions details.action-group {
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: #fafafa;
+}
+
+.nav-actions details.action-group > summary {
+  padding: 6px 0;
+  cursor: pointer;
+}
+
+.nav-actions details.action-group a {
+  display: block;
+  margin: 8px 0;
+}
+
+/* 「一覧に戻る」はブロックで最後に */
+.nav-actions > a:last-child {
+  display: inline-block;
+  margin-top: 8px;
+}
