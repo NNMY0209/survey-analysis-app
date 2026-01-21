@@ -182,7 +182,7 @@ public class AnswerImportService {
 							continue;
 						}
 
-						if ("SINGLE".equalsIgnoreCase(qType)) {
+						if ("SINGLE_CHOICE".equalsIgnoreCase(qType)) {
 							int optOrder = parseIntStrict(raw); // 選択肢のdisplay_order
 							Long optionId = getOptionId(optionIdByQuestionAndOrder, questionId, optOrder);
 							if (optionId == null) {
@@ -190,7 +190,7 @@ public class AnswerImportService {
 							}
 							answerImportDao.upsertSingle(responseId, questionId, optionId);
 
-						} else if ("MULTI".equalsIgnoreCase(qType)) {
+						} else if ("MULTI_CHOICE".equalsIgnoreCase(qType)) {
 							List<Integer> optOrders = parseMultiOrders(raw); // "1,3"
 							List<Long> optionIds = new ArrayList<>();
 							for (int optOrder : optOrders) {
