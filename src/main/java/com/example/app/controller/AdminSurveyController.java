@@ -12,10 +12,13 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.example.app.dao.AdminResponseDao;
+import com.example.app.dao.ScaleAdminDao;
 import com.example.app.dao.SurveyDao;
+import com.example.app.dto.AdminScaleCreateFormDto;
 import com.example.app.dto.AdminSurveyRowDto;
 import com.example.app.dto.OptionDto;
 import com.example.app.dto.QuestionDto;
+import com.example.app.dto.ScaleDto;
 import com.example.app.dto.SurveyDetailDto;
 
 @Controller
@@ -23,10 +26,12 @@ public class AdminSurveyController {
 
 	private final SurveyDao surveyDao;
 	private final AdminResponseDao adminResponseDao;
+	private final ScaleAdminDao scaleAdminDao;
 
-	public AdminSurveyController(SurveyDao surveyDao, AdminResponseDao adminResponseDao) {
+	public AdminSurveyController(SurveyDao surveyDao, AdminResponseDao adminResponseDao, ScaleAdminDao scaleAdminDao) {
 		this.surveyDao = surveyDao;
 		this.adminResponseDao = adminResponseDao;
+		this.scaleAdminDao = scaleAdminDao;
 	}
 
 	@GetMapping("/admin/surveys")
@@ -115,16 +120,23 @@ public class AdminSurveyController {
 	@GetMapping("/admin/surveys/{surveyId}")
 	public String surveyDetail(@PathVariable long surveyId, Model model) {
 
+		// 1) 基本情報
 		SurveyDetailDto survey = surveyDao.findDetailById(surveyId);
-		boolean hasDescription = survey.getDescription() != null && !survey.getDescription().trim().isEmpty();
 
+		boolean hasDescription = survey.getDescription() != null && !survey.getDescription().trim().isEmpty();
 		boolean hasConsentText = survey.getConsentText() != null && !survey.getConsentText().trim().isEmpty();
 
+		// 2) 設問・選択肢・下位尺度
 		List<QuestionDto> questions = surveyDao.findQuestionsBySurveyId(surveyId);
 		Map<Long, List<OptionDto>> optionMap = surveyDao.findOptionsBySurveyId(surveyId);
 
-		int answerCount = adminResponseDao.countResponsesBySurveyId(surveyId, false);
+		List<ScaleDto> scales = scaleAdminDao.findBySurveyId(surveyId);
 
+		// 3) 回答有無（編集可否）
+		int answerCount = adminResponseDao.countResponsesBySurveyId(surveyId, false);
+		boolean canEditQuestions = (answerCount == 0);
+
+		// 4) 公開状態表示用
 		long nowMillis = System.currentTimeMillis();
 
 		boolean isEnded = (survey.getCloseAt() != null && nowMillis >= survey.getCloseAt().getTime());
@@ -133,28 +145,30 @@ public class AdminSurveyController {
 				&& (survey.getCloseAt() == null || nowMillis < survey.getCloseAt().getTime())
 				&& (survey.getOpenAt() == null || nowMillis >= survey.getOpenAt().getTime());
 
-		// ★ ここを追加（一覧と同じ表示用ステータス）
 		String displayStatus = calcDisplayStatusForDetail(survey, nowMillis);
 		String displayStatusClass = calcDisplayStatusClassForDetail(survey, nowMillis);
 
+		// 5) Model詰め
+		model.addAttribute("survey", survey);
+		model.addAttribute("publishForm", survey);
+
 		model.addAttribute("hasDescription", hasDescription);
 		model.addAttribute("hasConsentText", hasConsentText);
+
+		model.addAttribute("questions", questions);
+		model.addAttribute("optionMap", optionMap);
+
+		model.addAttribute("scales", scales);
+		model.addAttribute("scaleForm", new AdminScaleCreateFormDto());
+
+		model.addAttribute("answerCount", answerCount);
+		model.addAttribute("canEditQuestions", canEditQuestions);
 
 		model.addAttribute("isEnded", isEnded);
 		model.addAttribute("isManualClosedDuringOpen", isManualClosedDuringOpen);
 
 		model.addAttribute("displayStatus", displayStatus);
 		model.addAttribute("displayStatusClass", displayStatusClass);
-
-		model.addAttribute("publishForm", survey);
-		model.addAttribute("survey", survey);
-		model.addAttribute("questions", questions);
-		model.addAttribute("optionMap", optionMap);
-		model.addAttribute("answerCount", answerCount);
-
-		model.addAttribute("survey", survey);
-
-		model.addAttribute("canEditQuestions", adminResponseDao.countResponsesBySurveyId(surveyId, false) == 0);
 
 		return "admin/survey-detail";
 	}

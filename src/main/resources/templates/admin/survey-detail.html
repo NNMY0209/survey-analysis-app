@@ -86,6 +86,51 @@
 			</form>
 		</div>
 
+		<div class="card" style="margin-bottom: 12px;">
+			<h2 class="section-title">【下位尺度】</h2>
+
+			<table class="table">
+				<thead>
+					<tr>
+						<th>コード</th>
+						<th>名称</th>
+						<th>説明</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr th:each="sc : ${scales}">
+						<td class="nowrap" th:text="${sc.scaleCode}"></td>
+						<td th:text="${sc.scaleName}"></td>
+						<td th:text="${sc.description}"></td>
+					</tr>
+					<tr th:if="${#lists.isEmpty(scales)}">
+						<td colspan="3" class="muted">下位尺度は未登録です</td>
+					</tr>
+				</tbody>
+			</table>
+
+			<p class="muted" th:unless="${canEditQuestions}">
+				※回答があるため下位尺度の追加・変更はできません。
+			</p>
+
+			<form th:if="${canEditQuestions}" th:action="@{|/admin/surveys/${survey.surveyId}/scales|}"
+				th:object="${scaleForm}" method="post" style="margin-top: 10px;">
+
+				<dl class="kv">
+					<dt>尺度コード</dt>
+					<dd><input type="text" th:field="*{scaleCode}" maxlength="50"></dd>
+
+					<dt>尺度名</dt>
+					<dd><input type="text" th:field="*{scaleName}" maxlength="200" style="width: 100%;"></dd>
+				</dl>
+
+				<div class="actions">
+					<button type="submit">下位尺度を追加</button>
+				</div>
+			</form>
+		</div>
+
+
 
 		<div class="card" style="margin-bottom: 12px;">
 			<h2 class="section-title">【公開設定】</h2>

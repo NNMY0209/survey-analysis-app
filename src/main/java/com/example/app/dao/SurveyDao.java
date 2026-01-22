@@ -1,11 +1,15 @@
 package com.example.app.dao;
 
+import java.sql.PreparedStatement;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
 import com.example.app.dto.AdminSurveyRowDto;
@@ -453,6 +457,26 @@ public class SurveyDao {
 				""";
 
 		return jdbcTemplate.update(sql, description, consentText, updatedBy, surveyId);
+	}
+
+	public long insertDraft(String title, long adminUserId) {
+		String sql = """
+				INSERT INTO surveys (title, status, created_by, updated_by)
+				VALUES (?, 'DRAFT', ?, ?)
+				""";
+		KeyHolder kh = new GeneratedKeyHolder();
+		jdbcTemplate.update(con -> {
+			PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+			ps.setString(1, title);
+			ps.setLong(2, adminUserId);
+			ps.setLong(3, adminUserId);
+			return ps;
+		}, kh);
+
+		Number key = kh.getKey();
+		if (key == null)
+			throw new IllegalStateException("Failed to get generated survey_id");
+		return key.longValue();
 	}
 
 }
