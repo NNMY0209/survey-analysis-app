@@ -1,91 +1,67 @@
 <!DOCTYPE html>
 <html lang="ja" xmlns:th="http://www.thymeleaf.org">
-
 <head>
-	<meta charset="UTF-8" />
-	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-	<title>回答一覧</title>
-	<style>
-		table {
-			border-collapse: collapse;
-			width: 100%;
-		}
-
-		th,
-		td {
-			border: 1px solid #ddd;
-			padding: 8px;
-		}
-
-		th {
-			background: #f5f5f5;
-			text-align: left;
-		}
-
-		.actions {
-			margin: 12px 0;
-			display: flex;
-			gap: 12px;
-			align-items: center;
-		}
-
-		.muted {
-			color: #666;
-			font-size: 12px;
-		}
-	</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>回答一覧</title>
+  <link rel="stylesheet" th:href="@{/css/common.css}">
 </head>
 
 <body>
+  <div th:replace="fragments/admin-header :: header"></div>
+  <div class="container">
+    <h1 class="page-title">回答一覧</h1>
 
-	<h1>回答一覧</h1>
+    <div class="card" style="margin-bottom: 12px;">
+      <dl class="kv">
+        <dt>surveyId</dt><dd><span th:text="${surveyId}">1</span></dd>
+        <dt>表示</dt>
+        <dd>
+          <a class="btn" th:href="@{|/admin/surveys/${surveyId}/responses?status=completed|}">COMPLETEDのみ</a>
+          <a class="btn" th:href="@{|/admin/surveys/${surveyId}/responses?status=all|}">全件</a>
+          <span class="muted" style="margin-left: 8px;" th:text="${'(現在: ' + status + ')'}">(現在: completed)</span>
+        </dd>
+      </dl>
+    </div>
 
-	<div class="actions">
-		<div>
-			<span class="muted">surveyId:</span>
-			<span th:text="${surveyId}">1</span>
-		</div>
+    <div class="card">
+      <div class="scroll-box">
+        <table class="table">
+          <thead>
+            <tr>
+              <th class="nowrap">response_id</th>
+              <th>アンケート名</th>
+              <th class="nowrap">status</th>
+              <th class="nowrap">回答数</th>
+              <th class="nowrap">respondent_key</th>
+              <th class="nowrap">started_at</th>
+              <th class="nowrap">completed_at</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr th:if="${#lists.isEmpty(responses)}">
+              <td colspan="7" class="muted">データがありません</td>
+            </tr>
+            <tr th:each="r : ${responses}">
+              <td class="nowrap">
+                <a th:href="@{|/admin/surveys/${surveyId}/responses/${r.responseId}|}" th:text="${r.responseId}">307</a>
+              </td>
+              <td th:text="${r.surveyTitle}">ストレス簡易チェック</td>
+              <td class="nowrap" th:text="${r.status}">COMPLETED</td>
+              <td class="nowrap" th:text="${r.answerCount}">6</td>
+              <td class="nowrap" th:text="${r.respondentKey}">xxxx-xxxx</td>
+              <td class="nowrap" th:text="${r.startedAt}">2026-01-01</td>
+              <td class="nowrap" th:text="${r.completedAt}">2026-01-01</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
-		<div>
-			<a th:href="@{|/admin/surveys/${surveyId}/responses?status=completed|}">COMPLETEDのみ</a>
-			|
-			<a th:href="@{|/admin/surveys/${surveyId}/responses?status=all|}">全件</a>
-			<span class="muted" th:text="${'(現在: ' + status + ')'}">(現在: completed)</span>
-		</div>
-	</div>
-
-	<table>
-		<thead>
-			<tr>
-				<th>response_id</th>
-				<th>アンケート名</th>
-				<th>status</th>
-				<th>回答件数</th>
-				<th>respondent_key</th>
-				<th>started_at</th>
-				<th>completed_at</th>
-			</tr>
-		</thead>
-
-		<tbody>
-			<tr th:if="${#lists.isEmpty(responses)}">
-				<td colspan="7">データがありません</td>
-			</tr>
-
-			<tr th:each="r : ${responses}">
-				<td>
-					<a th:href="@{|/admin/responses/${r.responseId}|}" th:text="${r.responseId}">307</a>
-				</td>
-				<td th:text="${r.surveyTitle}">ストレス簡易チェック</td>
-				<td th:text="${r.status}">COMPLETED</td>
-				<td th:text="${r.answerCount}">6</td>
-				<td th:text="${r.respondentKey}">xxxx-xxxx</td>
-				<td th:text="${r.startedAt}">2026-01-11 17:00</td>
-				<td th:text="${r.completedAt}">2026-01-11 17:05</td>
-			</tr>
-		</tbody>
-	</table>
-
+      <div class="actions">
+        <a class="btn" th:href="@{|/admin/surveys/${surveyId}|}">← アンケート詳細へ戻る</a>
+      </div>
+    </div>
+  </div>
 </body>
-
 </html>
+

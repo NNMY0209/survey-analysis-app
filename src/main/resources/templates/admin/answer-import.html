@@ -1,54 +1,105 @@
 <!DOCTYPE html>
 <html lang="ja" xmlns:th="http://www.thymeleaf.org">
-
 <head>
-	<meta charset="UTF-8">
-	<title>回答CSVインポート</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>回答CSVインポート</title>
+  <link rel="stylesheet" th:href="@{/css/common.css}">
 </head>
 
 <body>
+  <div th:replace="fragments/admin-header :: header"></div>
 
-	<h1>回答CSVインポート</h1>
+  <div class="container">
+    <h1 class="page-title">回答CSVインポート</h1>
 
-	<p>
-		対象アンケート：
-		<strong th:text="${survey.title}">アンケート名</strong>
-	</p>
+    <div class="card" style="margin-bottom: 12px;">
+      <p class="muted">対象アンケート：<strong th:text="${survey.title}">アンケート名</strong></p>
 
-	<form th:action="@{|/admin/surveys/${survey.surveyId}/responses/import|}" method="post"
-		enctype="multipart/form-data">
+      <form class="form"
+            th:action="@{|/admin/surveys/${survey.surveyId}/responses/import|}"
+            method="post"
+            enctype="multipart/form-data">
 
-		<div>
-			<input type="file" name="file" accept=".csv" required>
-		</div>
+        <div class="form-row">
+          <input class="input" type="file" name="file" accept=".csv" required>
+          <p class="help">UTF-8（BOMありでもOK）推奨 / 拡張子は .csv</p>
+        </div>
 
-		<div style="margin-top: 1em;">
-			<button type="submit">CSVを取り込む</button>
-		</div>
-	</form>
+        <div class="actions">
+          <button class="btn btn-primary" type="submit">CSVを取り込む</button>
+        </div>
+      </form>
 
-	<p th:if="${error}" style="color:red;" th:text="${error}"></p>
+      <div th:if="${error}" class="alert alert-error" style="margin-top: 12px;" th:text="${error}"></div>
+    </div>
 
-	<hr>
+    <div class="card">
+      <h2 class="section-title">取り込みルール</h2>
 
-	<h3>CSVフォーマット</h3>
-	<pre>
-respondent_key,Q1,Q2,Q3
-r-101,7,"1,3",2
-r-102,10,2,1
-</pre>
+      <ul class="muted" style="margin: 0 0 10px; padding-left: 18px;">
+        <li><strong>respondent_key</strong>：参加者識別子。空欄なら自動採番されます。</li>
+        <li><strong>Q列（Q1, Q2, ...）</strong>：設問の<strong>表示順（display_order）</strong>に対応します。</li>
+        <li>空欄は「未回答」として扱われ、保存されません。</li>
+      </ul>
 
-	<p>
-		※ Q列は設問番号（question_id）<br>
-		※ 空欄は未回答として扱われます
-	</p>
+      <details class="summary" open>
+        <summary><strong>CSVフォーマット例</strong></summary>
+        <div style="margin-top: 10px;">
+<pre class="prewrap">respondent_key,Q1,Q2,Q3,Q4
+r-101,2,"1,3","自由記述の例",
+r-102,,2,,5</pre>
+          <p class="help" style="margin: 8px 0 0;">※ Q列は設問の表示順（Q1→display_order=1）。</p>
+        </div>
+      </details>
 
-	<p>
-		<a th:href="@{|/admin/surveys/${survey.surveyId}|}">
-			← アンケート詳細へ戻る
-		</a>
-	</p>
+      <details class="summary" style="margin-top: 10px;">
+        <summary><strong>入力値の書き方（設問タイプ別）</strong></summary>
+        <div style="margin-top: 10px;">
+          <div class="scroll-box">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th class="nowrap">設問タイプ</th>
+                  <th>CSVに入れる値</th>
+                  <th class="nowrap">例</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="nowrap">SINGLE（単一選択）</td>
+                  <td>選択肢の<strong>表示順（display_order）</strong>を1つ</td>
+                  <td class="nowrap">2</td>
+                </tr>
+                <tr>
+                  <td class="nowrap">MULTI（複数選択）</td>
+                  <td>選択肢の表示順を<strong>カンマ区切り</strong>で複数</td>
+                  <td class="nowrap">1,3,4</td>
+                </tr>
+                <tr>
+                  <td class="nowrap">TEXT（自由記述）</td>
+                  <td>文字列（カンマを含む場合はCSVの仕様に従い<strong>ダブルクォート</strong>で囲む）</td>
+                  <td class="nowrap">"とても良い, と思う"</td>
+                </tr>
+                <tr>
+                  <td class="nowrap">NUMBER（数値）</td>
+                  <td>数値（内部的にはTEXTとして保存）</td>
+                  <td class="nowrap">5</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
 
+          <p class="help" style="margin: 8px 0 0;">
+            ※ SINGLE/MULTIの値は「選択肢の表示順」です（option_idではありません）。
+          </p>
+        </div>
+      </details>
+
+      <div class="actions">
+        <a class="btn" th:href="@{|/admin/surveys/${survey.surveyId}|}">← アンケート詳細へ戻る</a>
+      </div>
+    </div>
+  </div>
 </body>
-
 </html>

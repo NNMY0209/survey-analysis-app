@@ -1,39 +1,49 @@
 <!DOCTYPE html>
 <html lang="ja" xmlns:th="http://www.thymeleaf.org">
-
 <head>
-	<meta charset="UTF-8">
-	<title>回答CSVインポート結果</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>回答CSVインポート結果</title>
+  <link rel="stylesheet" th:href="@{/css/common.css}">
 </head>
 
 <body>
+  <div th:replace="fragments/admin-header :: header"></div>
+  <div class="container">
+    <h1 class="page-title">回答CSVインポート結果</h1>
 
-	<h1>CSVインポート結果</h1>
+    <div class="card" style="margin-bottom: 12px;">
+      <p class="muted">対象アンケート：<strong th:text="${survey.title}">アンケート名</strong></p>
 
-	<p>
-		対象アンケート：
-		<strong th:text="${survey.title}">アンケート名</strong>
-	</p>
+      <dl class="kv">
+        <dt>総行数</dt><dd><span th:text="${result.totalRows}">0</span></dd>
+        <dt>成功</dt><dd><span th:text="${result.successRows}">0</span></dd>
+        <dt>エラー</dt><dd><span th:text="${result.errorRows}">0</span></dd>
+      </dl>
+    </div>
 
-	<ul>
-		<li>総行数：<span th:text="${result.totalRows}">0</span></li>
-		<li>成功：<span th:text="${result.successRows}">0</span></li>
-		<li>エラー：<span th:text="${result.errorRows}">0</span></li>
-	</ul>
+    <div class="card" th:if="${result.errorRows > 0}">
+      <h2 class="section-title">エラー詳細</h2>
+      <div class="scroll-box">
+        <table class="table">
+          <thead><tr><th>#</th><th>内容</th></tr></thead>
+          <tbody>
+            <tr th:each="e, st : ${result.errors}">
+              <td class="nowrap" th:text="${st.index + 1}">1</td>
+              <td th:text="${e}">エラー</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="help" style="margin-top: 8px;">※ 修正後、再度CSVを取り込んでください。</p>
+    </div>
 
-	<div th:if="${result.errorRows > 0}">
-		<h3>エラー詳細</h3>
-		<ul>
-			<li th:each="e : ${result.errors}" th:text="${e}">エラー</li>
-		</ul>
-	</div>
-
-	<p>
-		<a th:href="@{|/admin/surveys/${survey.surveyId}/responses|}">
-			回答一覧へ
-		</a>
-	</p>
-
+    <div class="actions">
+      <a class="btn btn-primary" th:href="@{|/admin/surveys/${survey.surveyId}/responses|}">回答一覧へ</a>
+      <a class="btn" th:href="@{|/admin/surveys/${survey.surveyId}/responses/import|}">もう一度取り込む</a>
+      <a class="btn" th:href="@{|/admin/surveys/${survey.surveyId}|}">アンケート詳細へ戻る</a>
+    </div>
+  </div>
 </body>
-
 </html>
+

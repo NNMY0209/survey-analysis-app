@@ -1,25 +1,23 @@
-<!doctype html>
-<html xmlns:th="http://www.thymeleaf.org">
-
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
 <head>
-  <meta charset="utf-8">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>設問追加</title>
   <link rel="stylesheet" th:href="@{/css/common.css}">
 </head>
 
 <body>
   <div th:replace="fragments/admin-header :: header"></div>
-
   <div class="container">
     <h1 class="page-title">設問追加</h1>
-	
-	<div class="actions" style="margin-bottom:12px;">
-	  <a th:href="@{|/admin/surveys/${surveyId}|}">アンケート詳細に戻る</a>
-	  <a th:href="@{|/admin/surveys/${surveyId}/questions/import|}">CSVインポートへ</a>
-	</div>
 
+    <div class="actions" style="margin-bottom:12px;">
+      <a class="btn" th:href="@{|/admin/surveys/${surveyId}|}">アンケート詳細に戻る</a>
+      <a class="btn" th:href="@{|/admin/surveys/${surveyId}/questions/import|}">CSVインポートへ</a>
+    </div>
 
-    <p class="error" th:if="${error}" th:text="${error}"></p>
+    <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
 
     <form th:action="@{|/admin/surveys/${surveyId}/questions|}" th:object="${form}" method="post">
 
@@ -29,12 +27,12 @@
         <dl class="kv">
           <dt>設問文</dt>
           <dd>
-            <textarea th:field="*{questionText}" rows="5" style="width:100%;"></textarea>
+            <textarea class="input" th:field="*{questionText}" rows="5"></textarea>
           </dd>
 
           <dt>設問タイプ</dt>
           <dd>
-            <select th:field="*{questionType}">
+            <select class="input" th:field="*{questionType}">
               <option value="SINGLE_CHOICE">単一選択</option>
               <option value="MULTI_CHOICE">複数選択</option>
               <option value="TEXT">自由記述</option>
@@ -45,8 +43,7 @@
 
           <dt>用途</dt>
           <dd>
-            <!-- form側に questionRole がある前提（なければ追加してね） -->
-            <select th:field="*{questionRole}">
+            <select class="input" th:field="*{questionRole}">
               <option value="NORMAL">通常（尺度項目）</option>
               <option value="ATTENTION_CHECK">注意確認</option>
               <option value="VALIDITY_CHECK">妥当性確認</option>
@@ -65,64 +62,61 @@
       <div class="card" style="margin-bottom: 12px;">
         <h2 class="section-title">【選択肢】</h2>
 
-        <!-- スコア入力を基本OFFにするための説明 -->
         <p class="muted" style="margin-top:0;">
           通常はスコア（集計用の点数）をテンプレで自動設定します。カスタムにする場合のみ手入力してください。
         </p>
 
-        <!-- テンプレ選択（formに optionTemplate を追加する想定） -->
-        <div style="margin: 8px 0 12px;">
-          <label>テンプレ</label>
-          <select th:field="*{optionTemplate}">
+        <div class="form-row" style="margin: 8px 0 12px;">
+          <label class="muted">テンプレ</label>
+          <select class="input" th:field="*{optionTemplate}">
             <option value="LIKERT5">5段階（1〜5）</option>
             <option value="LIKERT7">7段階（1〜7）</option>
             <option value="CUSTOM">カスタム（手入力）</option>
           </select>
         </div>
 
-        <table class="table">
-          <thead>
-            <tr>
-              <th class="nowrap">#</th>
-              <th>選択肢テキスト</th>
-              <!-- scoreはCUSTOMのときだけ見せる -->
-              <th class="nowrap" th:if="*{optionTemplate == 'CUSTOM'}">スコア</th>
-              <!-- 正解は注意確認のときだけ見せる（文言は“期待する回答”） -->
-              <th class="nowrap" th:if="*{questionRole == 'ATTENTION_CHECK'}">期待する回答</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr th:each="opt, stat : *{options}">
-              <td class="nowrap" th:text="${stat.index + 1}"></td>
+        <div class="scroll-box">
+          <table class="table">
+            <thead>
+              <tr>
+                <th class="nowrap">#</th>
+                <th>選択肢テキスト</th>
+                <th class="nowrap" th:if="*{optionTemplate == 'CUSTOM'}">スコア</th>
+                <th class="nowrap" th:if="*{questionRole == 'ATTENTION_CHECK'}">期待する回答</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr th:each="opt, stat : *{options}">
+                <td class="nowrap" th:text="${stat.index + 1}"></td>
 
-              <td>
-                <input type="text" th:field="*{options[__${stat.index}__].optionText}" style="width:100%;">
-              </td>
+                <td>
+                  <input class="input" type="text" th:field="*{options[__${stat.index}__].optionText}">
+                </td>
 
-              <td th:if="*{optionTemplate == 'CUSTOM'}" class="nowrap">
-                <input type="number" th:field="*{options[__${stat.index}__].score}" style="width:6em">
-              </td>
+                <td th:if="*{optionTemplate == 'CUSTOM'}" class="nowrap">
+                  <input class="input" type="number" th:field="*{options[__${stat.index}__].score}" style="max-width: 8em;">
+                </td>
 
-              <td th:if="*{questionRole == 'ATTENTION_CHECK'}" class="nowrap">
-                <input type="checkbox" th:field="*{options[__${stat.index}__].correct}">
-              </td>
-            </tr>
-          </tbody>
-        </table>
+                <td th:if="*{questionRole == 'ATTENTION_CHECK'}" class="nowrap">
+                  <input type="checkbox" th:field="*{options[__${stat.index}__].correct}">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
 
         <p class="muted" th:if="*{optionTemplate != 'CUSTOM'}">
           ※テンプレ選択時は、スコアは自動で 1..N が入る想定です（保存時にサーバ側で設定）。
         </p>
 
-        <!-- 表示順はUIから排除（自動採番） -->
         <p class="muted">※表示順は自動で末尾に追加されます。</p>
       </div>
 
       <div class="actions">
-        <button type="submit">登録</button>
+        <button class="btn btn-primary" type="submit">登録</button>
       </div>
     </form>
   </div>
 </body>
-
 </html>
+

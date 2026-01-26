@@ -1,48 +1,52 @@
-<!doctype html>
-<html xmlns:th="http://www.thymeleaf.org">
-
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
 <head>
-	<meta charset="utf-8">
-	<title>設問定義インポート</title>
-	<link rel="stylesheet" th:href="@{/css/common.css}">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>設問定義インポート</title>
+  <link rel="stylesheet" th:href="@{/css/common.css}">
 </head>
 
 <body>
-	<div th:replace="fragments/admin-header :: header"></div>
+  <div th:replace="fragments/admin-header :: header"></div>
+  <div class="container">
+    <h1 class="page-title">設問定義インポート</h1>
 
-	<div class="container">
-		<h1 class="page-title">設問定義インポート</h1>
+    <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
 
-		<p class="error" th:if="${error}" th:text="${error}"></p>
+    <div class="card" style="margin-bottom:12px;">
+      <details class="summary" open>
+        <summary><strong>注意事項（クリックで開閉）</strong></summary>
+        <ul class="muted" style="margin:10px 0 0; padding-left:18px;">
+          <li>回答が存在するアンケートにはインポートできません。</li>
+          <li>設問は <code>(survey_id, display_order)</code> をキーに上書きされます。</li>
+          <li>選択肢（question_options）・尺度紐づけ（scale_questions）は「全削除 → 再登録」されます。</li>
+          <li>questions.csv の <code>scales</code> 列は <code>CODE:weight|CODE:weight</code> 形式（weight省略時は1.0）です。</li>
+        </ul>
+      </details>
+    </div>
 
-		<div class="card" style="margin-bottom:12px;">
-			<p class="muted">
-				※回答が存在するアンケートにはインポートできません。<br>
-				※設問は (survey_id, display_order) をキーに上書きされます。<br>
-				※選択肢(question_options)・尺度紐づけ(scale_questions)は「全削除→再登録」されます。<br>
-				※questions.csv の scales 列は「CODE:weight|CODE:weight」形式です（weight省略時は1.0）。
-			</p>
-		</div>
+    <form class="form"
+          th:action="@{|/admin/surveys/${survey.surveyId}/questions/import|}"
+          method="post"
+          enctype="multipart/form-data">
 
-		<form th:action="@{|/admin/surveys/${survey.surveyId}/questions/import|}" method="post"
-			enctype="multipart/form-data">
+      <div class="card">
+        <dl class="kv">
+          <dt>questions.csv</dt>
+          <dd><input class="input" type="file" name="questionsFile" accept=".csv" required></dd>
 
-			<div class="card">
-				<dl class="kv">
-					<dt>questions.csv</dt>
-					<dd><input type="file" name="questionsFile" accept=".csv"></dd>
+          <dt>question_options.csv</dt>
+          <dd><input class="input" type="file" name="optionsFile" accept=".csv" required></dd>
+        </dl>
 
-					<dt>question_options.csv</dt>
-					<dd><input type="file" name="optionsFile" accept=".csv"></dd>
-				</dl>
-
-				<div class="actions">
-					<button type="submit">インポート実行</button>
-					<a th:href="@{|/admin/surveys/${survey.surveyId}|}">アンケート詳細に戻る</a>
-				</div>
-			</div>
-		</form>
-	</div>
+        <div class="actions">
+          <button class="btn btn-primary" type="submit">インポート実行</button>
+          <a class="btn" th:href="@{|/admin/surveys/${survey.surveyId}|}">アンケート詳細に戻る</a>
+        </div>
+      </div>
+    </form>
+  </div>
 </body>
-
 </html>
+

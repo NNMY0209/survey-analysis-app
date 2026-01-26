@@ -18,11 +18,12 @@ public class AdminResponseDetailController {
         this.detailDao = detailDao;
     }
 
-    @GetMapping("/responses/{responseId}")
-    public String showDetail(@PathVariable long responseId, Model model) {
+    @GetMapping("/surveys/{surveyId}/responses/{responseId}")
+    public String showDetail(@PathVariable long surveyId,@PathVariable long responseId, Model model) {
 
         var details = detailDao.findDetailsByResponseId(responseId);
 
+        model.addAttribute("surveyId", surveyId);
         model.addAttribute("responseId", responseId);
         model.addAttribute("details", details);
 

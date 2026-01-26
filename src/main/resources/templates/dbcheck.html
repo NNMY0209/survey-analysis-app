@@ -1,11 +1,18 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>DB Check</title>
+  <link rel="stylesheet" th:href="@{/css/common.css}">
 </head>
+
 <body>
-  <h1>DB接続チェック</h1>
-  <p>survey_app のテーブル数: <span th:text="${tableCount}"></span></p>
+  <div class="container">
+    <h1 class="page-title">DB接続チェック</h1>
+    <div class="card">
+      <p>survey_app のテーブル数: <strong th:text="${tableCount}">0</strong></p>
+    </div>
+  </div>
 </body>
 </html>

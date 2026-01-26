@@ -7,7 +7,7 @@ public class AdminResponseDetailRowDto {
 	private Long responseId;
 
 	private Long questionId;
-	private Integer questionOrder;
+	private Integer displayOrder;
 	private String questionText;
 	private String questionType;
 
@@ -16,6 +16,8 @@ public class AdminResponseDetailRowDto {
 
 	private Integer answerNumber;
 	private String answerText;
+
+	private String answerDisplay;
 
 	private Timestamp createdAt;
 
@@ -43,12 +45,12 @@ public class AdminResponseDetailRowDto {
 		this.questionId = questionId;
 	}
 
-	public Integer getQuestionOrder() {
-		return questionOrder;
+	public Integer getDisplayOrder() {
+		return displayOrder;
 	}
 
-	public void setQuestionOrder(Integer questionOrder) {
-		this.questionOrder = questionOrder;
+	public void setDisplayOrder(Integer displayOrder) {
+		this.displayOrder = displayOrder;
 	}
 
 	public String getQuestionText() {
@@ -105,5 +107,13 @@ public class AdminResponseDetailRowDto {
 
 	public void setCreatedAt(Timestamp createdAt) {
 		this.createdAt = createdAt;
+	}
+
+	public String getAnswerDisplay() {
+		return answerDisplay;
+	}
+
+	public void setAnswerDisplay(String answerDisplay) {
+		this.answerDisplay = answerDisplay;
 	}
 }

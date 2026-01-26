@@ -293,77 +293,155 @@ a:hover {
 }
 
 .action-group {
-  margin-bottom: 12px;
+	margin-bottom: 12px;
 }
 
 .action-title {
-  font-size: 14px;
-  font-weight: bold;
-  color: #555;
-  margin-bottom: 6px;
+	font-size: 14px;
+	font-weight: bold;
+	color: #555;
+	margin-bottom: 6px;
 }
 
 .actions a {
-  display: inline-block;
-  margin: 4px 12px 4px 0; /* ← 横と縦に余白 */
-  line-height: 1.6;
+	display: inline-block;
+	margin: 4px 12px 4px 0;
+	/* ← 横と縦に余白 */
+	line-height: 1.6;
 }
 
 details.action-group {
-  padding: 8px 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+	padding: 8px 12px;
+	border: 1px solid #ddd;
+	border-radius: 4px;
 }
 
 details.action-group[open] {
-  background-color: #fafafa;
+	background-color: #fafafa;
 }
 
 details.action-group a {
-  display: block;          /* ← 縦に並べる */
-  margin: 6px 0;           /* ← 行間 */
+	display: block;
+	/* ← 縦に並べる */
+	margin: 6px 0;
+	/* ← 行間 */
 }
 
 /* nav actions (survey detail links) */
 .nav-actions {
-  margin-top: 14px;
+	margin-top: 14px;
 }
 
 .nav-actions .action-group {
-  margin-bottom: 18px;
+	margin-bottom: 18px;
 }
 
 .nav-actions .action-title {
-  font-size: 14px;
-  font-weight: 700;
-  margin: 0 0 8px;
+	font-size: 14px;
+	font-weight: 700;
+	margin: 0 0 8px;
 }
 
 .nav-actions a {
-  display: inline-block;
-  margin: 6px 14px 6px 0;
-  line-height: 1.7;
+	display: inline-block;
+	margin: 6px 14px 6px 0;
+	line-height: 1.7;
 }
 
 .nav-actions details.action-group {
-  padding: 10px 12px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  background: #fafafa;
+	padding: 10px 12px;
+	border: 1px solid #ddd;
+	border-radius: 6px;
+	background: #fafafa;
 }
 
-.nav-actions details.action-group > summary {
-  padding: 6px 0;
-  cursor: pointer;
+.nav-actions details.action-group>summary {
+	padding: 6px 0;
+	cursor: pointer;
 }
 
 .nav-actions details.action-group a {
-  display: block;
-  margin: 8px 0;
+	display: block;
+	margin: 8px 0;
 }
 
 /* 「一覧に戻る」はブロックで最後に */
-.nav-actions > a:last-child {
-  display: inline-block;
-  margin-top: 8px;
+.nav-actions>a:last-child {
+	display: inline-block;
+	margin-top: 8px;
+}
+
+/* ===== Form ===== */
+.form {
+	display: grid;
+	gap: 12px;
+}
+
+.form-row {
+	display: grid;
+	gap: 6px;
+}
+
+.input,
+select,
+textarea {
+	width: 100%;
+	padding: 10px 12px;
+	border: 1px solid var(--border);
+	border-radius: 8px;
+	background: #fff;
+	font-size: 14px;
+}
+
+input[type="file"].input {
+	padding: 8px 10px;
+}
+
+.help {
+	font-size: 12px;
+	color: var(--muted);
+}
+
+/* ===== Button-like links ===== */
+.btn {
+	display: inline-block;
+	padding: 10px 12px;
+	border-radius: 8px;
+	border: 1px solid var(--border);
+	background: #fff;
+	font-weight: 700;
+	width: fit-content;
+}
+
+.btn-primary {
+	background: var(--primary);
+	color: #fff;
+	border-color: var(--primary);
+}
+
+.btn-primary:hover {
+	background: var(--primary-hover);
+	text-decoration: none;
+}
+
+.btn:hover {
+	text-decoration: none;
+}
+
+/* ===== Alert ===== */
+.alert {
+	padding: 10px 12px;
+	border-radius: 8px;
+	border: 1px solid var(--border);
+	background: #fff;
+}
+
+.alert-error {
+	border-color: #f3b4b4;
+	background: #fff5f5;
+}
+
+.alert-success {
+	border-color: #b7e1c1;
+	background: #f2fbf5;
 }
