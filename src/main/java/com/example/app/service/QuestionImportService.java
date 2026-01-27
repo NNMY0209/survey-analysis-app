@@ -41,7 +41,40 @@ public class QuestionImportService {
 		this.adminResponseDao = adminResponseDao;
 	}
 
+	/**
+	 * 互換用（旧画面向け）：
+	 * - questions.csv + question_options.csv を同時に取り込み
+	 * ※ 1ページ手動ステップでは importQuestionsOnly / importOptionsOnly を呼ぶ
+	 */
+	@Transactional
 	public ImportResultDto importCsv(long surveyId, MultipartFile questionsFile, MultipartFile optionsFile) {
+		ImportResultDto r1 = importQuestionsOnly(surveyId, questionsFile);
+		if (!r1.getErrors().isEmpty()) {
+			return r1;
+		}
+
+		ImportResultDto r2 = importOptionsOnly(surveyId, optionsFile);
+
+		// 合算（見やすさ用）
+		r2.setTotalRows(r1.getTotalRows() + r2.getTotalRows());
+		r2.setSuccessRows(r1.getSuccessRows() + r2.getSuccessRows());
+		r2.getErrors().addAll(r1.getErrors());
+		return r2;
+	}
+
+	/**
+	 * 新方式（1ページ手動ステップ向け）：
+	 * questions.csv（設問のみ）を upsert
+	 *
+	 * 注意：
+	 * - ここでは options の全置換はしない
+	 * - ここでは scales（scale_questions）の反映はしない（※重みページでやる方針ならここは空が安全）
+	 *
+	 * もし「設問CSVの scales 列で紐づけも同時にやりたい」なら、
+	 * applyScalesFromQuestionsCsv(...) を有効化してOK（後述のコメント参照）
+	 */
+	@Transactional
+	public ImportResultDto importQuestionsOnly(long surveyId, MultipartFile questionsFile) {
 		ImportResultDto result = new ImportResultDto();
 
 		// 倫理ガード：回答があるなら設問定義変更不可
@@ -50,32 +83,24 @@ public class QuestionImportService {
 			return result;
 		}
 
+		if (questionsFile == null || questionsFile.isEmpty()) {
+			result.addError("questions.csv を選択してください。");
+			return result;
+		}
+
 		try {
 			Map<Integer, QRow> questions = readQuestionsCsv(surveyId, questionsFile, result);
-			Map<Integer, List<ORow>> options = readOptionsCsv(surveyId, optionsFile, result);
-
 			if (!result.getErrors().isEmpty())
 				return result;
 
-			// 整合性：選択肢必須なタイプは2件以上
+			// ここで scales の存在チェックをするかは運用次第。
+			// 「重み（scale_questions.csv）で紐づける」運用なら、questions.csvのscales列は空にする前提なので
+			// このチェック自体を無効化してもOK。
+			//
+			// ただ、あなたの現状CSVはscales列で紐づけもしているので、残す場合は下のチェックを生かす。
 			for (var e : questions.entrySet()) {
 				int qOrder = e.getKey();
 				QRow q = e.getValue();
-
-				if (needsOptions(q.questionType)) {
-					List<ORow> ops = options.getOrDefault(qOrder, List.of());
-					if (ops.size() < 2) {
-						result.addError("設問 display_order=" + qOrder + " は選択肢が2件以上必要です。");
-					}
-				}
-			}
-
-			// 整合性：scales 指定がある場合、scale_code が存在するか確認
-			// （DBを叩くので、先にまとめてチェック）
-			for (var e : questions.entrySet()) {
-				int qOrder = e.getKey();
-				QRow q = e.getValue();
-
 				for (var entry : q.scales.entrySet()) {
 					String code = entry.getKey();
 					if (scaleImportDao.findScaleId(surveyId, code).isEmpty()) {
@@ -87,8 +112,7 @@ public class QuestionImportService {
 			if (!result.getErrors().isEmpty())
 				return result;
 
-			// 反映（トランザクション）
-			applyImportTransactional(surveyId, questions, options, result);
+			applyQuestionsOnlyTransactional(surveyId, questions, result);
 			return result;
 
 		} catch (Exception e) {
@@ -97,12 +121,70 @@ public class QuestionImportService {
 		}
 	}
 
+	/**
+	 * 新方式（1ページ手動ステップ向け）：
+	 * question_options.csv（選択肢のみ）を全置換で反映
+	 *
+	 * 前提：
+	 * - 設問が先に存在する（survey_id + display_order -> question_id を解決するため）
+	 */
 	@Transactional
-	protected void applyImportTransactional(
+	public ImportResultDto importOptionsOnly(long surveyId, MultipartFile optionsFile) {
+		ImportResultDto result = new ImportResultDto();
+
+		// 倫理ガード：回答があるなら設問定義変更不可
+		if (adminResponseDao.existsAnyResponseBySurveyId(surveyId)) {
+			result.addError("回答が存在するため、設問定義のインポートはできません。");
+			return result;
+		}
+
+		if (optionsFile == null || optionsFile.isEmpty()) {
+			result.addError("question_options.csv を選択してください。");
+			return result;
+		}
+
+		// 参照：このsurveyに設問があるか（無いなら先にquestionsを入れる必要あり）
+		Map<Integer, Long> questionIdByOrder = questionImportDao.findQuestionIdByOrder(surveyId);
+		if (questionIdByOrder == null || questionIdByOrder.isEmpty()) {
+			result.addError("このアンケートに設問がありません。先に questions.csv をインポートしてください。");
+			return result;
+		}
+
+		// 設問タイプも参照して、TEXT/NUMBERに誤ってoptionsを入れてもよいか（基本は無視する/警告する）を決める
+		// ここでは「設問typeに応じて、SINGLE_CHOICE/MULTI_CHOICEだけ反映」する実装にする
+		Map<Integer, String> questionTypeByOrder = questionImportDao.findQuestionTypeByOrder(surveyId);
+
+		try {
+			Map<Integer, List<ORow>> options = readOptionsCsv(surveyId, optionsFile, result);
+			if (!result.getErrors().isEmpty())
+				return result;
+
+			// 整合性：対象設問が存在するか
+			for (Integer qOrder : options.keySet()) {
+				if (!questionIdByOrder.containsKey(qOrder)) {
+					result.addError("question_options.csv：存在しない設問順です: display_order=" + qOrder);
+				}
+			}
+			if (!result.getErrors().isEmpty())
+				return result;
+
+			applyOptionsOnlyTransactional(surveyId, options, questionIdByOrder, questionTypeByOrder, result);
+			return result;
+
+		} catch (Exception e) {
+			result.addError("CSV読み込みエラー: " + e.getMessage());
+			return result;
+		}
+	}
+
+	// ================== 反映（トランザクション） ==================
+
+	@Transactional
+	protected void applyQuestionsOnlyTransactional(
 			long surveyId,
 			Map<Integer, QRow> questions,
-			Map<Integer, List<ORow>> options,
 			ImportResultDto result) {
+
 		int total = 0;
 		int success = 0;
 
@@ -113,44 +195,74 @@ public class QuestionImportService {
 			total++;
 			QRow q = questions.get(qOrder);
 
-			// upsert question
-			long questionId = questionImportDao.findQuestionId(surveyId, q.displayOrder)
-					.map(id -> {
+			// upsert question（optionsやscale_questionsは触らない）
+			questionImportDao.findQuestionId(surveyId, q.displayOrder)
+					.ifPresentOrElse(id -> {
 						questionImportDao.updateQuestion(id, q.questionText, q.questionType, q.questionRole,
 								q.isReverse, q.isRequired);
-						return id;
-					})
-					.orElseGet(() -> questionImportDao.insertQuestion(
-							surveyId, q.displayOrder, q.questionText, q.questionType, q.questionRole, q.isReverse,
-							q.isRequired));
-
-			// options：全置換
-			questionImportDao.deleteOptionsByQuestionId(questionId);
-			if (needsOptions(q.questionType)) {
-				List<ORow> ops = new ArrayList<>(options.getOrDefault(qOrder, List.of()));
-				ops.sort(Comparator.comparingInt(o -> o.displayOrder));
-				for (ORow o : ops) {
-					questionImportDao.insertOption(questionId, o.displayOrder, o.optionText, o.score, o.isCorrect);
-				}
-			}
-
-			// scales：全置換
-			scaleImportDao.deleteByQuestionId(questionId);
-			if (!q.scales.isEmpty()) {
-				for (var entry : q.scales.entrySet()) {
-					String scaleCode = entry.getKey();
-					BigDecimal weight = entry.getValue();
-
-					Long scaleId = scaleImportDao.findScaleId(surveyId, scaleCode)
-							.orElseThrow(() -> new IllegalStateException("scale_code not found: " + scaleCode));
-
-					scaleImportDao.insert(scaleId, questionId, weight);
-				}
-			}
+					}, () -> {
+						questionImportDao.insertQuestion(
+								surveyId, q.displayOrder, q.questionText, q.questionType, q.questionRole, q.isReverse,
+								q.isRequired);
+					});
 
 			success++;
 		}
 
+		result.setTotalRows(total);
+		result.setSuccessRows(success);
+	}
+
+	@Transactional
+	protected void applyOptionsOnlyTransactional(
+			long surveyId,
+			Map<Integer, List<ORow>> optionsByOrder,
+			Map<Integer, Long> questionIdByOrder,
+			Map<Integer, String> questionTypeByOrder,
+			ImportResultDto result) {
+
+		int total = 0;
+		int success = 0;
+
+		List<Integer> qOrders = new ArrayList<>(optionsByOrder.keySet());
+		Collections.sort(qOrders);
+
+		for (int qOrder : qOrders) {
+			Long questionId = questionIdByOrder.get(qOrder);
+			if (questionId == null) {
+				// 事前チェック済みだが念のため
+				result.addError("question_options.csv：存在しない設問順です: display_order=" + qOrder);
+				continue;
+			}
+
+			String qType = (questionTypeByOrder != null) ? questionTypeByOrder.get(qOrder) : null;
+
+			// TEXT/NUMBER は options 不要なので、入ってても無視（またはエラー/警告にしたいならここでaddError）
+			if (qType != null && !needsOptions(qType)) {
+				// 無視する方針
+				continue;
+			}
+
+			// 全置換
+			questionImportDao.deleteOptionsByQuestionId(questionId);
+
+			List<ORow> ops = new ArrayList<>(optionsByOrder.getOrDefault(qOrder, List.of()));
+			ops.sort(Comparator.comparingInt(o -> o.displayOrder));
+
+			// 2件以上必須（SINGLE_CHOICE/MULTI_CHOICE）
+			if (ops.size() < 2) {
+				result.addError("設問 display_order=" + qOrder + " は選択肢が2件以上必要です。");
+				continue;
+			}
+
+			for (ORow o : ops) {
+				questionImportDao.insertOption(questionId, o.displayOrder, o.optionText, o.score, o.isCorrect);
+				total++;
+				success++;
+			}
+		}
+
+		// totalRows/successRows は「選択肢行数」で返す（分かりやすい）
 		result.setTotalRows(total);
 		result.setSuccessRows(success);
 	}
@@ -188,7 +300,7 @@ public class QuestionImportService {
 			int idxRole = indexOfIgnoreCase(headers, "question_role");
 			int idxRev = indexOfIgnoreCase(headers, "is_reverse");
 			int idxReq = indexOfIgnoreCase(headers, "is_required");
-			int idxScales = indexOfIgnoreCase(headers, "scales"); // 追加
+			int idxScales = indexOfIgnoreCase(headers, "scales"); // 任意
 
 			if (idxSurveyId < 0 || idxOrder < 0 || idxText < 0 || idxType < 0) {
 				result.addError("questions.csv 必須列: survey_id, display_order, question_text, question_type");
@@ -228,9 +340,6 @@ public class QuestionImportService {
 				String role = (idxRole >= 0) ? safe(getCol(cols, idxRole)).toUpperCase(Locale.ROOT) : "NORMAL";
 				if (role.isBlank())
 					role = "NORMAL";
-
-				// ここで role を制限したいなら（任意）
-				// if (!Set.of("NORMAL","ATTENTION_CHECK","VALIDITY_CHECK").contains(role)) { ... }
 
 				boolean rev = (idxRev >= 0) ? parseBool01(getCol(cols, idxRev)) : false;
 				boolean req = (idxReq >= 0) ? parseBool01(getCol(cols, idxReq)) : true;
@@ -372,7 +481,7 @@ public class QuestionImportService {
 		return map;
 	}
 
-	// ================= CSVユーティリティ（AnswerImportServiceに寄せるなら共通化OK） =================
+	// ================= CSVユーティリティ =================
 
 	private List<String> parseCsvLine(String line) {
 		List<String> out = new ArrayList<>();

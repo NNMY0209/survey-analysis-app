@@ -198,14 +198,17 @@
 
 			<details class="action-group">
 				<summary class="action-title">設問・定義</summary>
-				<a th:if="${canEditQuestions}" th:href="@{|/admin/surveys/${survey.surveyId}/questions/import|}">
-					設問定義をCSVインポート
+
+				<a th:if="${canEditQuestions}" th:href="@{|/admin/surveys/${survey.surveyId}/import|}">
+					設問・下位尺度をCSVインポート
 				</a>
+
 				<a th:if="${canEditQuestions}" th:href="@{|/admin/surveys/${survey.surveyId}/questions/new|}">
 					設問を手動追加
 				</a>
+
 				<p th:unless="${canEditQuestions}" class="muted">
-					※回答があるため設問の追加・変更はできません
+					※回答があるため設問・尺度の追加・変更はできません
 				</p>
 			</details>
 

@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>インポート（統合）</title>
+  <link rel="stylesheet" th:href="@{/css/common.css}">
+</head>
+
+<body>
+  <div th:replace="fragments/admin-header :: header"></div>
+
+  <div class="container">
+    <h1 class="page-title">インポート（統合）</h1>
+
+    <!-- 上部：対象アンケート情報 -->
+    <div class="card" style="margin-bottom:12px;">
+      <dl class="kv">
+        <dt>アンケート</dt>
+        <dd th:text="${survey.title}">survey title</dd>
+        <dt class="muted">ID</dt>
+        <dd class="muted" th:text="${surveyId}">0</dd>
+      </dl>
+    </div>
+
+    <!-- 注意事項 -->
+    <div class="card" style="margin-bottom:12px;">
+      <details class="summary" open>
+        <summary><strong>実行順序と注意事項（クリックで開閉）</strong></summary>
+        <ul class="muted" style="margin:10px 0 0; padding-left:18px;">
+          <li>推奨順：①下位尺度 → ②設問 → ③選択肢 → ④重み</li>
+          <li>回答が存在するアンケートにはインポートできません（倫理ガード）。</li>
+          <li>選択肢（question_options）は対象設問ごとに「全削除 → 再登録」になります。</li>
+          <li>重み（scale_questions）は survey 単位で「全削除 → 再登録」になります。</li>
+          <li>questions.csv の <code>question_type</code> は
+            <code>SINGLE_CHOICE / MULTI_CHOICE / TEXT / NUMBER</code> のみ対応です。</li>
+        </ul>
+      </details>
+    </div>
+
+    <!-- ========================= -->
+    <!-- ① 下位尺度（scales.csv） -->
+    <!-- ========================= -->
+    <div class="card" style="margin-bottom:12px;">
+      <h2 class="section-title">① 下位尺度（scales.csv）</h2>
+
+      <form class="form"
+            th:action="@{/admin/surveys/{id}/scales/import/scales(id=${surveyId})}"
+            method="post"
+            enctype="multipart/form-data">
+
+        <dl class="kv">
+          <dt>scales.csv</dt>
+          <dd>
+            <input class="input" type="file" name="scalesFile" accept=".csv" required>
+            <div class="muted" style="margin-top:6px;">
+              必須列：<code>scale_code</code>, <code>scale_name</code>（<code>description</code> は任意）
+            </div>
+          </dd>
+        </dl>
+
+        <div class="actions">
+          <button class="btn btn-primary" type="submit">下位尺度をインポート</button>
+        </div>
+      </form>
+
+      <!-- 結果表示 -->
+      <div th:if="${scalesResult != null}" style="margin-top:10px;">
+        <div th:if="${!scalesResult.errors.isEmpty()}" class="alert alert-error">
+          <strong>エラー：</strong>
+          <ul style="margin:6px 0 0; padding-left:18px;">
+            <li th:each="e : ${scalesResult.errors}" th:text="${e}"></li>
+          </ul>
+        </div>
+        <div th:if="${scalesResult.errors.isEmpty()}" class="alert alert-success"
+             th:text="|成功: ${scalesResult.successRows}/${scalesResult.totalRows}|"></div>
+      </div>
+    </div>
+
+    <!-- ===================== -->
+    <!-- ② 設問（questions.csv） -->
+    <!-- ===================== -->
+    <div class="card" style="margin-bottom:12px;">
+      <h2 class="section-title">② 設問（questions.csv）</h2>
+
+      <form class="form"
+            th:action="@{/admin/surveys/{id}/questions/import/questions(id=${surveyId})}"
+            method="post"
+            enctype="multipart/form-data">
+
+        <dl class="kv">
+          <dt>questions.csv</dt>
+          <dd>
+            <input class="input" type="file" name="questionsFile" accept=".csv" required>
+            <div class="muted" style="margin-top:6px;">
+              必須列：<code>survey_id</code>, <code>display_order</code>, <code>question_text</code>, <code>question_type</code><br>
+              任意：<code>question_role</code>, <code>is_reverse</code>, <code>is_required</code>, <code>scales</code>
+            </div>
+          </dd>
+        </dl>
+
+        <div class="actions">
+          <button class="btn btn-primary" type="submit">設問をインポート</button>
+        </div>
+      </form>
+
+      <div th:if="${questionsResult != null}" style="margin-top:10px;">
+        <div th:if="${!questionsResult.errors.isEmpty()}" class="alert alert-error">
+          <strong>エラー：</strong>
+          <ul style="margin:6px 0 0; padding-left:18px;">
+            <li th:each="e : ${questionsResult.errors}" th:text="${e}"></li>
+          </ul>
+        </div>
+        <div th:if="${questionsResult.errors.isEmpty()}" class="alert alert-success"
+             th:text="|成功: ${questionsResult.successRows}/${questionsResult.totalRows}|"></div>
+      </div>
+    </div>
+
+    <!-- =============================== -->
+    <!-- ③ 選択肢（question_options.csv） -->
+    <!-- =============================== -->
+    <div class="card" style="margin-bottom:12px;">
+      <h2 class="section-title">③ 選択肢（question_options.csv）</h2>
+
+      <form class="form"
+            th:action="@{/admin/surveys/{id}/questions/import/options(id=${surveyId})}"
+            method="post"
+            enctype="multipart/form-data">
+
+        <dl class="kv">
+          <dt>question_options.csv</dt>
+          <dd>
+            <input class="input" type="file" name="optionsFile" accept=".csv" required>
+            <div class="muted" style="margin-top:6px;">
+              必須列：<code>survey_id</code>, <code>question_display_order</code>, <code>display_order</code>,
+              <code>option_text</code>, <code>score</code><br>
+              任意：<code>is_correct</code>
+            </div>
+          </dd>
+        </dl>
+
+        <div class="actions">
+          <button class="btn btn-primary" type="submit">選択肢をインポート</button>
+        </div>
+      </form>
+
+      <div th:if="${optionsResult != null}" style="margin-top:10px;">
+        <div th:if="${!optionsResult.errors.isEmpty()}" class="alert alert-error">
+          <strong>エラー：</strong>
+          <ul style="margin:6px 0 0; padding-left:18px;">
+            <li th:each="e : ${optionsResult.errors}" th:text="${e}"></li>
+          </ul>
+        </div>
+        <div th:if="${optionsResult.errors.isEmpty()}" class="alert alert-success"
+             th:text="|成功: ${optionsResult.successRows}/${optionsResult.totalRows}|"></div>
+      </div>
+    </div>
+
+    <!-- ============================== -->
+    <!-- ④ 重み（scale_questions.csv） -->
+    <!-- ============================== -->
+    <div class="card" style="margin-bottom:12px;">
+      <h2 class="section-title">④ 重み（scale_questions.csv）</h2>
+
+      <form class="form"
+            th:action="@{/admin/surveys/{id}/scales/import/weights(id=${surveyId})}"
+            method="post"
+            enctype="multipart/form-data">
+
+        <dl class="kv">
+          <dt>scale_questions.csv</dt>
+          <dd>
+            <input class="input" type="file" name="scaleQuestionsFile" accept=".csv" required>
+            <div class="muted" style="margin-top:6px;">
+              必須列：<code>scale_code</code>, <code>question_order</code>（または <code>question_display_order</code>）<br>
+              任意：<code>weight</code>（省略時 1.0）
+            </div>
+          </dd>
+        </dl>
+
+        <div class="actions">
+          <button class="btn btn-primary" type="submit">重みをインポート</button>
+          <a class="btn" th:href="@{|/admin/surveys/${surveyId}|}">アンケート詳細に戻る</a>
+        </div>
+      </form>
+
+      <div th:if="${weightsResult != null}" style="margin-top:10px;">
+        <div th:if="${!weightsResult.errors.isEmpty()}" class="alert alert-error">
+          <strong>エラー：</strong>
+          <ul style="margin:6px 0 0; padding-left:18px;">
+            <li th:each="e : ${weightsResult.errors}" th:text="${e}"></li>
+          </ul>
+        </div>
+        <div th:if="${weightsResult.errors.isEmpty()}" class="alert alert-success"
+             th:text="|成功: ${weightsResult.successRows}/${weightsResult.totalRows}|"></div>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>
