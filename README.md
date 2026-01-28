@@ -1,102 +1,115 @@
-# survey-analysis-app
+# アンケート集計・分析システム（Survey Analysis App）
 
-アンケート集計システム（実習課題）
+本システムは、**心理学分野で利用されるアンケートおよび心理尺度**を前提とした  
+アンケート回答・集計・分析を行うWebアプリケーションです。
+
+心理尺度特有の要件（下位尺度、逆転項目、注意確認・虚偽検出など）を考慮し、  
+アンケート実施者（管理者）および回答者の双方にとって  
+運用しやすい構成を目指しています。
+
+本リポジトリは **個人制作の実習課題**として開発されています。
+
+---
 
 ## 概要
-Spring Boot + JDBC + MySQL を用いたアンケート集計システムです。
-管理者向けにアンケート結果の確認・集計を行うことを目的としています。
+
+本システムは以下の2つの要素から構成されます。
+
+- **アンケート情報管理システム（管理者向け）**
+  - アンケート定義・設問・下位尺度の管理
+  - 回答データの集計・分析・可視化
+- **アンケート回答フォーム（回答者向け）**
+  - 同意確認後のアンケート回答
+  - 回答内容の送信
+
+---
+
+## 主な機能（実装済・一部対応）
+
+### 管理者機能
+- アンケート作成・編集・公開管理
+- 設問登録（単一選択／複数選択／数値／自由記述）
+- 下位尺度の定義
+- 回答データのCSVインポート
+- 基本統計量の算出
+  - 平均値
+  - 中央値
+  - 分散
+  - 標準偏差
+- グラフによる集計結果表示（一部）
+
+### 回答者機能
+- 同意確認画面
+- アンケート回答画面
+- 回答送信
+
+---
 
 ## 使用技術
-- Java 17
-- Spring Boot 3.5.9
-- Spring JDBC (JdbcTemplate)
-- MySQL
-- Gradle
 
-## 現在の実装状況
-- Spring Boot プロジェクト初期構築
-- MySQL 接続確認（/dbcheck）
-- GitHub リポジトリ管理（Fork運用）
-
-## 起動方法
-1. MySQL に `survey_app` データベースを作成
-2. `application-local.properties` にDB接続情報を設定
-3. Spring Boot アプリケーションを起動
-4. ブラウザで `http://localhost:8080/dbcheck` にアクセス
-
-## CSVインポート仕様
-
-本システムでは、アンケートの **回答データ** および **設問定義** を CSV ファイルから一括登録できます。  
-CSVは Excel で作成された UTF-8(BOM付き) ファイルにも対応しています。
+- **Backend**
+  - Java
+  - Spring Boot
+- **Frontend**
+  - HTML
+  - CSS
+- **Database**
+  - MySQL
+- **その他**
+  - CSVインポート機能
+  - JDBCベースのデータアクセス
 
 ---
 
-## CSVインポート仕様（設問定義 / 回答）
+## データ設計の特徴
 
-本システムでは、アンケートの **設問定義** および **回答データ** を CSV から一括登録できます。
-- Excel で作成した CSV（UTF-8 / UTF-8 BOM 付き）に対応
-- 設問は **display_order（表示順）** をキーに識別します
+- 心理尺度を想定した設計
+  - 下位尺度（Scale）
+  - 逆転項目フラグ
+- 設問表示順（display_order）を基準とした回答管理
+- CSVによる設問・尺度・回答データの一括投入を想定
 
 ---
 
-### 設問定義インポート（2ファイル）
+## 今後の要対応項目（TODO）
 
-#### questions.csv
-```csv
-survey_id,display_order,question_text,question_type,question_role,is_reverse,is_required,scales
-question_type : SINGLE_CHOICE / MULTI_CHOICE / TEXT / NUMBER
+以下の項目は **現時点では未対応、または不完全な実装**となっています。
 
-question_role : NORMAL / ATTENTION_CHECK / VALIDITY_CHECK
+### アンケート公開・回答制御
+- 下書き状態のアンケートが公開されてしまう問題
+- 回答期間変更時の挙動不整合  
+  - 作業日より前の日付を設定すると publish 状態へ遷移してしまう
+  - publish 後に期間変更ができない
 
-is_reverse : 0/1（逆転項目）
+### 回答妥当性・フラグ管理
+- フラグ非対応
+  - 注意確認項目
+  - 虚偽検出項目
+  - 必須項目未回答チェック
 
-is_required : 0/1（必須）
+### 回答UI・表示不具合
+- 尺度選択肢が表示されず、回答できないケースがある
+- 下位尺度分析ナンバーの扱いが単一前提になっている
+- マルチ尺度（複数下位尺度）への対応不足
 
-scales : 下位尺度と重みづけ（scale_code:weight|scale_code:weight）
+### 機能拡張予定
+- アカウント管理機能
+  - 管理者／一般ユーザーの権限管理
+- 参加者向け簡易結果表示画面
+  - 回答直後に確認できる簡易フィードバック
 
-例）DEP:1.0|ANX:0.5
+---
 
-weight 省略時は 1.0 として扱われます
+## 本プロジェクトについて
 
-scale_code は scales.scale_code に存在する必要があります
+- 本アプリケーションは **学習・実習目的**で開発されています
+- 実運用を前提としたセキュリティ・負荷対策は未対応です
+- 心理学的分析ロジックは今後段階的に拡張予定です
 
-question_options.csv
-csv
-コードをコピーする
-survey_id,question_display_order,display_order,option_text,score,is_correct
-question_display_order : 対応する設問の display_order（例：Q1なら 1）
+---
 
-display_order : 選択肢の表示順（回答CSVではこの番号を指定）
+## 作成者
 
-score : 集計用スコア
+- 二宮 俊平  
+- 個人制作（実習課題）
 
-is_correct : 注意確認用の期待回答（通常は 0、ATTENTION_CHECK で利用）
-
-インポート時の挙動
-設問は (survey_id, display_order) をキーに 上書き更新（upsert）
-
-question_options と scale_questions は、対象設問について 全削除 → 再登録
-
-回答が存在するアンケートには、設問定義インポートはできません
-
-回答データインポート
-CSVヘッダ例
-csv
-コードをコピーする
-respondent_key,Q1,Q2,Q3,...
-Qn は設問の display_order = n を意味します
-
-設問タイプ	CSVの値	意味
-SINGLE_CHOICE	2	選択肢の display_order
-MULTI_CHOICE	1,3	複数選択（display_order をカンマ区切り）
-TEXT	任意文字列	自由記述
-NUMBER	数値	数値（文字列として保存）
-
-※ 空欄は未回答として扱われ、保存されません。
-
-サンプルCSV
-docs/sample_questions.csv
-
-docs/sample_question_options.csv
-
-docs/sample_responses.csv
