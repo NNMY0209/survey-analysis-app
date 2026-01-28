@@ -259,7 +259,7 @@ public class SurveyDao {
 				JOIN question_options o
 				  ON o.option_id = a.option_id
 				WHERE q.survey_id = ?
-				  AND q.question_type = 'SINGLE'
+				  AND q.question_type = 'SINGLE_CHOICE'
 				  AND o.score IS NOT NULL
 				GROUP BY q.question_id, q.display_order, q.question_text
 				ORDER BY q.display_order
@@ -339,7 +339,7 @@ public class SurveyDao {
 				  ) qstat ON qstat.question_id = q.question_id
 				  WHERE s.survey_id = ?
 				    AND rs.status = 'COMPLETED'
-				    AND q.question_type = 'SINGLE'
+				    AND q.question_type = 'SINGLE_CHOICE'
 				),
 				per_resp AS (
 				  SELECT
