@@ -4,6 +4,8 @@ import java.sql.Timestamp;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,6 +22,7 @@ import com.example.app.dto.OptionDto;
 import com.example.app.dto.QuestionDto;
 import com.example.app.dto.ScaleDto;
 import com.example.app.dto.SurveyDetailDto;
+import com.example.app.security.LoginAdminUser;
 
 @Controller
 public class AdminSurveyController {
@@ -36,7 +39,18 @@ public class AdminSurveyController {
 
 	@GetMapping("/admin/surveys")
 	public String surveys(Model model) {
-		List<AdminSurveyRowDto> surveys = surveyDao.findAllWithAnswerCount();
+		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+	    LoginAdminUser loginUser = (LoginAdminUser) auth.getPrincipal();
+
+	    Long adminId = loginUser.getUserId();
+	    String userName = loginUser.getUserName();
+	    
+	    model.addAttribute("loginUserName", userName);
+
+	    System.out.println("ログイン管理者ID: " + adminId);
+	    System.out.println("ログイン管理者名: " + userName);
+
+		List<AdminSurveyRowDto> surveys = surveyDao.findAllWithAnswerCount(adminId);
 
 		long nowMillis = System.currentTimeMillis();
 		for (AdminSurveyRowDto s : surveys) {

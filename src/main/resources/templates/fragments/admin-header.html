@@ -4,9 +4,10 @@
     <div class="app-title">アンケート集計ソフト</div>
 
     <div class="app-header__right">
-      <span class="muted">ユーザー名さん</span>
+      <span th:text="${loginUserName}">ユーザー名</span>
       <span class="muted">|</span>
-      <a href="#" class="link">ログアウト</a>
-    </div>
+	  <form th:action="@{/logout}" method="post" style="display:inline;">
+	      <button type="submit">ログアウト</button>
+	  </form>
   </div>
 </header>

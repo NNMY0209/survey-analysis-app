@@ -276,7 +276,7 @@ public class SurveyDao {
 	}
 
 	// ===== アンケートの回答数取得 =====
-	public List<AdminSurveyRowDto> findAllWithAnswerCount() {
+	public List<AdminSurveyRowDto> findAllWithAnswerCount(Long adminId) {
 		String sql = """
 				SELECT
 				  s.survey_id,
@@ -291,6 +291,7 @@ public class SurveyDao {
 				LEFT JOIN response_sessions rs
 				  ON rs.respondent_id = r.respondent_id
 				 AND rs.status = 'COMPLETED'
+				  WHERE s.created_by = ?
 				GROUP BY
 				  s.survey_id, s.title, s.status, s.open_at, s.close_at
 				ORDER BY s.survey_id DESC
@@ -305,7 +306,7 @@ public class SurveyDao {
 			dto.setCloseAt(rs.getTimestamp("close_at"));
 			dto.setAnswerCount(rs.getInt("answer_count"));
 			return dto;
-		});
+		}, adminId);
 	}
 
 	// ==== 下位尺度ごとの平均（SINGLE / COMPLETEDのみ）====
