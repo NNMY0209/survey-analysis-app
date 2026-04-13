@@ -1,0 +1,6 @@
+survey_id,display_order,question_text,question_type,question_role,is_reverse,is_required,scales
+2,1,最近1週間、気分は安定していましたか？,SINGLE_CHOICE,NORMAL,0,1,MENTAL:1.0
+2,2,作業中に集中しやすかったですか？,SINGLE_CHOICE,NORMAL,0,1,MENTAL:1.0
+2,3,最近感じているストレス要因を選んでください。（複数選択可）,MULTI_CHOICE,NORMAL,0,0,STRESS:1.0
+2,4,最近の体調について自由に記述してください。,TEXT,NORMAL,0,0,
+2,5,現在の疲労感を1〜10で入力してください。,NUMBER,NORMAL,0,1,STRESS:1.0

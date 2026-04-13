@@ -1,0 +1,5 @@
+scale_code,question_order,weight
+MENTAL,1,1.0
+MENTAL,2,1.0
+STRESS,3,1.0
+STRESS,5,1.0
